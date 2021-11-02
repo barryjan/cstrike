@@ -13,7 +13,7 @@
 				4. Install compiled plugin, details: wiki.amxmodx.org/index.php/Configuring_AMX_Mod_X#Installing
 #endif
 
-#define MAX_SEMIAUTO_INACCURACY 2 // level of maximum inaccuracy and recoil for semi-auto
+#define MAX_SEMIAUTO_INACCURACY 3 // level of maximum inaccuracy and recoil for semi-auto
 #define WEAPONSTATE_GLOCK18_BURST_MODE (1<<1)
 
 new bool:g_bInReload
@@ -74,19 +74,20 @@ public forward_ItemPostFrame( iEnt )
 			if ( !g_iBulletsNum )
 			{
 				if ( get_pdata_float( iEnt, m_flNextPrimaryAttack, 4 ) <= 0.0 )
-                {
-                    g_iBulletsNum = -1
-                }
+				{
+				    g_iBulletsNum = -1
+				}
 			}
 			
 			if ( ~pev( s_iPlrId, pev_button ) & IN_ATTACK )
-            {
+		    	{
 				set_pdata_int( iEnt, m_iGlock18ShotsFired, 0, 4 )
-            }
+		    	}
 			else if ( get_pdata_int( iEnt, m_iGlock18ShotsFired, 4 ) > 0 )
-            {
+            		{
 				set_pdata_int( s_iPlrId, m_bIsPrimaryFireAllowed, 0, 5 )
-            }
+            		}
+			
 			return HAM_IGNORED
 		}
 	}
