@@ -19,6 +19,7 @@ new g_msg_scenario
 #define MAX_SPRITES 2
 new const g_timersprite[MAX_SPRITES][] = { "bombticking", "bombticking1" }
 new const g_message[] = "Detonation time initialized ....."
+new bool:g_roundended
 
 public plugin_init() 
 {
@@ -27,7 +28,7 @@ public plugin_init()
 
 	cvar_showteam 	= register_cvar("amx_showc4timer", "3")
 	cvar_flash 	= register_cvar("amx_showc4flash", "0")
-	cvar_sprite 	= register_cvar("amx_showc4sprite", "1")
+	cvar_sprite 	= register_cvar("amx_showc4sprite", "2")
 	cvar_msg 	= register_cvar("amx_showc4msg", "0")
 	mp_c4timer 	= get_cvar_pointer("mp_c4timer")
 	
@@ -36,6 +37,7 @@ public plugin_init()
 	g_msg_scenario	= get_user_msgid("Scenario")
 	
 	register_event("HLTV", "event_hltv", "a", "1=0", "2=0")
+	register_logevent("logevent_roundend", 2, "1=Round_End") 
 	register_logevent("logevent_plantedthebomb", 3, "2=Planted_The_Bomb")
 }
 
@@ -43,10 +45,19 @@ public plugin_cfg()
 	g_c4timer = get_pcvar_num(mp_c4timer)
 
 public event_hltv()
+{
 	plugin_cfg()
+	g_roundended = false
+}
+
+public logevent_roundend()
+	g_roundended = true
 
 public logevent_plantedthebomb()
 {
+	if(g_roundended)
+		return
+	
 	new showtteam = get_pcvar_num(cvar_showteam)
 	
 	static players[32], num, i
@@ -82,3 +93,6 @@ public update_timer(id)
 		show_hudmessage(id, g_message)
 	}
 }
+/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
+*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
+*/
