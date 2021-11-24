@@ -1,7 +1,7 @@
 #include <amxmodx>
 
 #define PLUGIN 	"c4 timer"
-#define VERSION "1.2"
+#define VERSION "1.3"
 #define AUTHOR 	"cheap_suit"
 
 new g_c4timer
@@ -16,8 +16,7 @@ new g_msg_showtimer
 new g_msg_roundtime
 new g_msg_scenario
 
-#define MAX_SPRITES 2
-new const g_timersprite[MAX_SPRITES][] = { "bombticking", "bombticking1" }
+new const g_timersprite[][] = { "bombticking", "bombticking1" }
 new const g_message[] = "Detonation time initialized ....."
 new bool:g_roundended
 
@@ -82,7 +81,7 @@ public update_timer(id)
 	
 	message_begin(MSG_ONE_UNRELIABLE, g_msg_scenario, _, id)
 	write_byte(1)
-	write_string(g_timersprite[clamp(get_pcvar_num(cvar_sprite), 0, (MAX_SPRITES - 1))])
+	write_string(g_timersprite[clamp(get_pcvar_num(cvar_sprite), 0, (sizeof(g_timersprite) - 1))])
 	write_byte(150)
 	write_short(get_pcvar_num(cvar_flash) ? 20 : 0)
 	message_end()
@@ -93,6 +92,3 @@ public update_timer(id)
 		show_hudmessage(id, g_message)
 	}
 }
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
