@@ -21,7 +21,7 @@
 
 #define PLUGIN "Reloaded Weapons On New Round"
 #define AUTHOR "ConnorMcLeod"
-#define VERSION "2.1.0"
+#define VERSION "2.1.1"
 
 #define XO_WEAPON	4
 #define m_pNext		42
@@ -72,6 +72,7 @@ public Ham_CBasePlayer_Spawn_Pre( id )
 			}
 		}
 
-		set_pdata_float(id, m_flNextAttack, flNextAttack, XO_PLAYER)
+		//set_pdata_float(id, m_flNextAttack, flNextAttack, XO_PLAYER)
+		set_pev(id, pev_weaponanim, 0)
 	}
 }
