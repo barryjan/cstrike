@@ -21,8 +21,9 @@ new g_iBotIndex[ MAX_PLAYERS + 1 ]
 new g_iBotTakeoverCount[ MAX_PLAYERS + 1 ]
 
 new g_pCvar_Enable
-new g_pCvar_LimitTakeovers
+new g_pCvar_Limit
 new g_pCvar_AdminOnly
+new g_pCvar_Cost
 
 new g_iMsgId_ScoreAttrib
 
@@ -37,25 +38,80 @@ public plugin_init()
 	
 	g_pCvar_Enable 		= register_cvar( "amx_bottakeover", "1" )
 	g_pCvar_AdminOnly 	= register_cvar( "amx_bottakeover_adminonly", "0" )
-	g_pCvar_LimitTakeovers 	= register_cvar( "amx_bottakeover_limit", "0" )
-	
-	register_event( "SpecHealth2", "event_SpecHealth2", "bd", "2>0" )
-	register_event("HLTV", "event_hltv", "a", "1=0", "2=0")
+	g_pCvar_Limit		= register_cvar( "amx_bottakeover_limit", "0" )
+	g_pCvar_Cost 		= register_cvar( "amx_bottakeover_cost", "0" )
 	
 	register_clcmd( "drop", "clcmd_Drop" )
 	
 	RegisterHam( Ham_Spawn, "player", "forward_Spawn_Post", .Post = 1 )
 	
+	register_event( "SpecHealth2", "event_SpecHealth2", "bd", "2>0" )
+	register_event("HLTV", "event_hltv", "a", "1=0", "2=0")
+
 	g_iMsgId_ScoreAttrib = get_user_msgid( "ScoreAttrib" )
+}
+
+public clcmd_Drop( id )
+{
+	if ( is_user_alive( id ) || !get_pcvar_num( g_pCvar_Enable ) )
+	{	
+		return PLUGIN_CONTINUE
+	}
+	
+	if ( get_pcvar_num( g_pCvar_AdminOnly ) && !is_user_admin( id ) )
+	{
+		return PLUGIN_CONTINUE	
+	}
+	
+	new iMoney = cs_get_user_money( id )
+	new iCost = get_pcvar_num( g_pCvar_Cost )
+	
+	if ( iMoney < iCost )
+	{
+		set_dhudmessage( 0, 160, 0, _, _, 0, 0.0 )
+		show_dhudmessage( id, "Bot takeover denied; insufficient funds ($%d)", iCost )
+		
+		return PLUGIN_CONTINUE
+	}
+	else
+	{
+		cs_set_user_money( id, iMoney - iCost )
+	}
+
+	new iLimit = get_pcvar_num( g_pCvar_Limit )
+	
+	if ( iLimit > 0 && g_iBotTakeoverCount[ id ] >= iLimit )
+	{
+		set_dhudmessage( 0, 160, 0, _, _, 0, 0.0 )
+		show_dhudmessage( id, "Bot takeover limit reached" )
+		
+		return PLUGIN_CONTINUE
+	}
+	
+	new iTarget = pev( id, pev_iuser2 )
+	
+	if ( is_user_alive( iTarget ) && is_user_bot( iTarget ) && get_user_team( id ) == get_user_team( iTarget ) )
+	{
+		g_iBotIndex[ id ] = iTarget
+		ExecuteHamB( Ham_CS_RoundRespawn, id )
+		
+		return PLUGIN_HANDLED
+	}
+	return PLUGIN_CONTINUE
 }
 
 public event_SpecHealth2( id )
 {
 	new iTarget = read_data( 2 )
 	
-	if ( is_user_alive( iTarget ) && is_user_bot( iTarget ) && get_user_team( id ) == get_user_team( iTarget ) )
+	if ( get_pcvar_num( g_pCvar_Enable ) && is_user_alive( iTarget ) 
+	&& is_user_bot( iTarget ) && get_user_team( id ) == get_user_team( iTarget ) )
 	{
-		if ( get_pcvar_num( g_pCvar_AdminOnly ) && !is_user_admin( id ) )
+		new iLimit = get_pcvar_num( g_pCvar_Limit )
+
+		if ( ( get_pcvar_num( g_pCvar_AdminOnly ) && !is_user_admin( id ) ) ||
+		( iLimit > 0 && g_iBotTakeoverCount[ id ] >= iLimit ) ||
+		( cs_get_user_money( id ) < get_pcvar_num( g_pCvar_Cost ) ) )
 		{
 			return	
 		}
@@ -75,38 +131,6 @@ public event_hltv()
 	{
 		g_iBotTakeoverCount[ iPlayers[ iIndex ] ] = 0
 	}
-}
-
-public clcmd_Drop( id )
-{
-	if ( is_user_alive( id ) || !get_pcvar_num( g_pCvar_Enable ) )
-	{	
-		return PLUGIN_CONTINUE
-	}
-	
-	if ( get_pcvar_num( g_pCvar_AdminOnly ) && !is_user_admin( id ) )
-	{
-		return PLUGIN_CONTINUE	
-	}
-	
-	new iTakeoverLimit = get_pcvar_num( g_pCvar_LimitTakeovers )
-	
-	if ( iTakeoverLimit > 0 && iTakeoverLimit >= g_iBotTakeoverCount[ id ] )
-	{
-		set_dhudmessage( 0, 160, 0, _, _, 0, 0.0 )
-		show_dhudmessage( id, "Bot takeover limit reached" )
-		
-		return PLUGIN_CONTINUE
-	}
-	
-	new iTarget = pev( id, pev_iuser2 )
-	
-	if ( is_user_alive( iTarget ) && is_user_bot( iTarget ) && get_user_team( id ) == get_user_team( iTarget ) )
-	{
-		g_iBotIndex[ id ] = iTarget
-		ExecuteHamB( Ham_CS_RoundRespawn, id )
-	}
-	return PLUGIN_HANDLED
 }
 
 public forward_Spawn_Post( id )
@@ -143,6 +167,7 @@ public forward_Spawn_Post( id )
 	fm_strip_user_weapons( id )
 	fm_give_item( id, "weapon_knife" )
 
+	/*
 	const MAX_AMMO_SLOTS = 15
 	new iBpAmmo[ MAX_AMMO_SLOTS ]
 	
@@ -151,7 +176,7 @@ public forward_Spawn_Post( id )
 	    iBpAmmo[ rgAmmoSlot ] = get_pdata_int( iTarget, m_rgAmmo_CBasePlayer[ rgAmmoSlot ] )
 	    set_pdata_int( id, m_rgAmmo_CBasePlayer[ rgAmmoSlot ], iBpAmmo[ rgAmmoSlot ] )
 	}
-
+	*/
 	new iItem, iSlot
 	
 	for ( iSlot = 1; iSlot <= 5; iSlot++ )
@@ -162,9 +187,16 @@ public forward_Spawn_Post( id )
 			ExecuteHamB( Ham_AddPlayerItem, id, iItem )
 			ExecuteHamB( Ham_Item_AttachToPlayer, iItem, id )
 			
-			if ( iSlot == 5 )
+			switch ( iSlot )
 			{
-				cs_set_user_plant( id )
+				case 1, 2, 4:
+				{
+					new iAmmoId = ExecuteHam( Ham_Item_PrimaryAmmoIndex, iItem )
+					new iBpAmmo = get_pdata_int( iTarget, m_rgAmmo_CBasePlayer[ iAmmoId ] )
+					
+					set_pdata_int( id, m_rgAmmo_CBasePlayer[ iAmmoId ], iBpAmmo )
+				}
+				case 5: cs_set_user_plant( id )
 			}
 		}
 	}

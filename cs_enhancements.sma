@@ -33,21 +33,20 @@ public plugin_init()
 		.author 	= "BARRY."
 	)
 
-	RegisterHam( Ham_Weapon_PrimaryAttack, "weapon_m249", 	"forward_WeaponPrimaryAttack" )
-	RegisterHam( Ham_Weapon_PrimaryAttack, "weapon_mac10", 	"forward_WeaponPrimaryAttack" )
-	RegisterHam( Ham_Weapon_PrimaryAttack, "weapon_tmp", 	"forward_WeaponPrimaryAttack" )
-	RegisterHam( Ham_Weapon_PrimaryAttack, "weapon_sg550",	"forward_WeaponPrimaryAttack" )
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_m249", 	"forward_WeaponPrimaryAttack" )
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_mac10", "forward_WeaponPrimaryAttack" )
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_tmp", 	"forward_WeaponPrimaryAttack" )
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_sg550",	"forward_WeaponPrimaryAttack" )
 
-	RegisterHam( Ham_Item_PostFrame,	"weapon_m249", 	   "forward_ItemPostFrame_Post", .Post = 1 )
-	RegisterHam( Ham_Item_PostFrame,       	"weapon_mac10",    "forward_ItemPostFrame_Post", .Post = 1 )
-	RegisterHam( Ham_Item_PostFrame,       	"weapon_tmp", 	   "forward_ItemPostFrame_Post", .Post = 1 )
-	RegisterHam( Ham_Item_PostFrame,       	"weapon_sg550",    "forward_ItemPostFrame_Post", .Post = 1 )
+	RegisterHam( Ham_Item_PostFrame,	"weapon_m249",	"forward_ItemPostFrame_Post", .Post = 1 )
+	RegisterHam( Ham_Item_PostFrame,       	"weapon_mac10",	"forward_ItemPostFrame_Post", .Post = 1 )
+	RegisterHam( Ham_Item_PostFrame,       	"weapon_tmp",	"forward_ItemPostFrame_Post", .Post = 1 )
+	RegisterHam( Ham_Item_PostFrame,       	"weapon_sg550",	"forward_ItemPostFrame_Post", .Post = 1 )
 	
-	RegisterHam( Ham_Weapon_PrimaryAttack, 	 "weapon_glock18", "forward_GlockPrimaryAttack_Post", .Post = 1 )
-	RegisterHam( Ham_Weapon_SecondaryAttack, "weapon_glock18", "forward_GlockSecondaryAttack" )
-	RegisterHam( Ham_Item_Deploy, 		 "weapon_glock18", "forward_GlockDeploy_Post", .Post = 1 )
-	RegisterHam( Ham_Item_PostFrame, 	 "weapon_glock18", "forward_GlockPostFrame" )
-	
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_glock18", "forward_GlockPrimaryAttack_Post", .Post = 1 )
+	RegisterHam( Ham_Weapon_SecondaryAttack,"weapon_glock18", "forward_GlockSecondaryAttack" )
+	RegisterHam( Ham_Item_Deploy, 		"weapon_glock18", "forward_GlockDeploy_Post", .Post = 1 )
+	RegisterHam( Ham_Item_PostFrame, 	"weapon_glock18", "forward_GlockPostFrame" )
 	
 	new const szPrimaryWeapons[][] = { "weapon_tmp", "weapon_mac10", "weapon_mp5navy", "weapon_ump45", "weapon_p90", "weapon_m249", 
 					"weapon_galil", "weapon_famas", "weapon_ak47", "weapon_m4a1", "weapon_sg552", "weapon_aug" }
@@ -67,6 +66,7 @@ public plugin_init()
 public forward_WeaponPlayEmptySound( iEnt )
 {
 	new iSecWeapon = get_pdata_cbase( get_pdata_cbase( iEnt, m_pPlayer, 4 ), m_rgpPlayerItems_CBasePlayer[ 2 ] )
+	
 	if ( iSecWeapon )
 	{
 		if ( get_pdata_int( iEnt, m_iShotFired, 4 ) > 4 )
@@ -84,7 +84,6 @@ public forward_WeaponPrimaryAttack( iEnt )
 		case CSW_SG550: set_pdata_float( iEnt, m_flAccuracy, 1.0, 4 )
 		default: set_pdata_float( iEnt, m_flAccuracy, 0.0, 4 )
 	}
-	
 }
 
 public forward_ItemPostFrame_Post( iEnt )
@@ -188,6 +187,3 @@ public event_SetFOV( id )
 {
 	g_bInZoom[ id ] = ( 0 < read_data( 1 ) < 55 )
 }
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
