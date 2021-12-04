@@ -21,7 +21,7 @@ new g_iBotIndex[ MAX_PLAYERS + 1 ]
 new g_iBotTakeoverCount[ MAX_PLAYERS + 1 ]
 
 new g_pCvar_Enable
-new g_pCvar_MaxTakeovers
+new g_pCvar_LimitTakeovers
 new g_pCvar_AdminOnly
 
 new g_iMsgId_ScoreAttrib
@@ -37,7 +37,7 @@ public plugin_init()
 	
 	g_pCvar_Enable 		= register_cvar( "amx_bottakeover", "1" )
 	g_pCvar_AdminOnly 	= register_cvar( "amx_bottakeover_adminonly", "0" )
-	g_pCvar_MaxTakeovers 	= register_cvar( "amx_bottakeover_max", "0" )
+	g_pCvar_LimitTakeovers 	= register_cvar( "amx_bottakeover_limit", "0" )
 	
 	register_event( "SpecHealth2", "event_SpecHealth2", "bd", "2>0" )
 	register_event("HLTV", "event_hltv", "a", "1=0", "2=0")
@@ -55,8 +55,13 @@ public event_SpecHealth2( id )
 	
 	if ( is_user_alive( iTarget ) && is_user_bot( iTarget ) && get_user_team( id ) == get_user_team( iTarget ) )
 	{
+		if ( get_pcvar_num( g_pCvar_AdminOnly ) && !is_user_admin( id ) )
+		{
+			return	
+		}
+		
 		set_dhudmessage( 0, 160, 0, _, _, 0, 0.0 )
-		show_dhudmessage( id, "Press Drop [G] to takeover bot" )
+		show_dhudmessage( id, "Press DROP to takeover bot" )
 	}
 }
 
@@ -84,10 +89,13 @@ public clcmd_Drop( id )
 		return PLUGIN_CONTINUE	
 	}
 	
-	new iMaxTakeovers = get_pcvar_num( g_pCvar_MaxTakeovers )
+	new iTakeoverLimit = get_pcvar_num( g_pCvar_LimitTakeovers )
 	
-	if ( iMaxTakeovers > 0 && iMaxTakeovers >= g_iBotTakeoverCount[ id ] )
+	if ( iTakeoverLimit > 0 && iTakeoverLimit >= g_iBotTakeoverCount[ id ] )
 	{
+		set_dhudmessage( 0, 160, 0, _, _, 0, 0.0 )
+		show_dhudmessage( id, "Bot takeover limit reached" )
+		
 		return PLUGIN_CONTINUE
 	}
 	
@@ -109,15 +117,13 @@ public forward_Spawn_Post( id )
 	}
 	
 	new iTarget = g_iBotIndex[ id ]
-	new Float:flHealth, Float:flArmorValue, iArmorType
+	new Float:flHealth, iArmorValue, CsArmorType:iArmorType
 	
-	pev( iTarget, pev_health, flHealth ) 
-	pev( iTarget, pev_armorvalue, flArmorValue ) 
-	pev( iTarget, pev_armortype, iArmorType ) 
-	
+	pev( iTarget, pev_health, flHealth )
+	iArmorValue = cs_get_user_armor( iTarget, iArmorType )
+
 	set_pev( id, pev_health, flHealth )
-	set_pev( id, pev_armorvalue, flArmorValue )
-	set_pev( id, pev_armortype, iArmorType )
+	cs_set_user_armor( id, iArmorValue, iArmorType )
 
 	new const Float:VEC_DUCK_HULL_MIN[ 3 ] = { -16.0, -16.0, -18.0 }
 	new const Float:VEC_DUCK_HULL_MAX[ 3 ] = { 16.0, 16.0, 32.0 }
@@ -135,7 +141,8 @@ public forward_Spawn_Post( id )
 	engfunc( EngFunc_SetOrigin, iTarget, Float:{ 0.0, 0.0, -4096.0 } )
 	
 	fm_strip_user_weapons( id )
-	
+	fm_give_item( id, "weapon_knife" )
+
 	const MAX_AMMO_SLOTS = 15
 	new iBpAmmo[ MAX_AMMO_SLOTS ]
 	
@@ -144,38 +151,47 @@ public forward_Spawn_Post( id )
 	    iBpAmmo[ rgAmmoSlot ] = get_pdata_int( iTarget, m_rgAmmo_CBasePlayer[ rgAmmoSlot ] )
 	    set_pdata_int( id, m_rgAmmo_CBasePlayer[ rgAmmoSlot ], iBpAmmo[ rgAmmoSlot ] )
 	}
-	
+
 	new iItem, iSlot
 	
-	for ( iSlot = 1; iSlot <= 3; iSlot++ )
+	for ( iSlot = 1; iSlot <= 5; iSlot++ )
 	{
-		while( ( iItem = get_pdata_cbase( iTarget, m_rgpPlayerItems_CBasePlayer[ iSlot ] ) ) > 0 )
+		while ( ( iItem = get_pdata_cbase( iTarget, m_rgpPlayerItems_CBasePlayer[ iSlot ] ) ) > 0 )
 		{
 			ExecuteHamB( Ham_RemovePlayerItem, iTarget, iItem )
+			ExecuteHamB( Ham_AddPlayerItem, id, iItem )
+			ExecuteHamB( Ham_Item_AttachToPlayer, iItem, id )
 			
-			if ( ExecuteHamB( Ham_AddPlayerItem, id, iItem ) )
+			if ( iSlot == 5 )
 			{
-				ExecuteHamB( Ham_Item_AttachToPlayer, iItem, id )			
+				cs_set_user_plant( id )
 			}
 		}
 	}
-	
+	/*
 	new const EQUIP_LIST[] = { CSW_HEGRENADE, CSW_FLASHBANG, CSW_SMOKEGRENADE, CSW_C4 }
 	new const EQUIP_NAME[][] = { "weapon_hegrenade", "weapon_flashbang", "weapon_smokegrenade", "weapon_c4" }
 	new iIndex, iWeapons = pev( iTarget, pev_weapons )
 	
-	for ( iIndex = 0; iIndex < sizeof( EQUIP_LIST ); iIndex++ )
+	for ( iIndex = 0; iIndex < sizeof ( EQUIP_LIST ); iIndex++ )
 	{
 		if ( iWeapons & ( 1 << EQUIP_LIST[ iIndex ] ) )
 		{
 			fm_give_item( id, EQUIP_NAME[ iIndex ] )
+			
+			if ( equal( EQUIP_NAME[ iIndex ], "weapon_c4" ) )
+			{
+				cs_set_user_plant( id )
+			}
 		}
 	}
-	
+	*/
 	cs_set_user_defuse( id, cs_get_user_defuse( iTarget ) )
 	cs_set_user_nvg( id, cs_get_user_nvg( iTarget ) )
 	set_pdata_float( id, m_flNextAttack, 0.0, 5 )
 	set_pev( id, pev_weaponanim, 0 )
+	
+	set_pev( iTarget, pev_health, 0.0 )
 	set_pev( iTarget, pev_deadflag, DEAD_DEAD )
 	
 	message_begin( MSG_BROADCAST, g_iMsgId_ScoreAttrib )

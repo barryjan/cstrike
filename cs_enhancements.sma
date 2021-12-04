@@ -48,11 +48,33 @@ public plugin_init()
 	RegisterHam( Ham_Item_Deploy, 		 "weapon_glock18", "forward_GlockDeploy_Post", .Post = 1 )
 	RegisterHam( Ham_Item_PostFrame, 	 "weapon_glock18", "forward_GlockPostFrame" )
 	
+	
+	new const szPrimaryWeapons[][] = { "weapon_tmp", "weapon_mac10", "weapon_mp5navy", "weapon_ump45", "weapon_p90", "weapon_m249", 
+					"weapon_galil", "weapon_famas", "weapon_ak47", "weapon_m4a1", "weapon_sg552", "weapon_aug" }
+					
+	for ( new i = 0; i < sizeof ( szPrimaryWeapons ); i++ )
+	{
+		RegisterHam( Ham_Weapon_PlayEmptySound,  szPrimaryWeapons[ i ], "forward_WeaponPlayEmptySound" )
+	}
+	
 	register_event( "CurWeapon", 	"event_CurWeapon", 	"be", "1=1" )
 	register_event( "SetFOV", 	"event_SetFOV", 	"be" )
 
 	g_iMsgId_CurWeapon = get_user_msgid( "CurWeapon" )
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
+}
+
+public forward_WeaponPlayEmptySound( iEnt )
+{
+	new iSecWeapon = get_pdata_cbase( get_pdata_cbase( iEnt, m_pPlayer, 4 ), m_rgpPlayerItems_CBasePlayer[ 2 ] )
+	if ( iSecWeapon )
+	{
+		if ( get_pdata_int( iEnt, m_iShotFired, 4 ) > 4 )
+		{
+			ExecuteHamB( Ham_Weapon_RetireWeapon, iEnt )
+			ExecuteHamB( Ham_Item_Deploy, iSecWeapon )
+		}
+	}
 }
 
 public forward_WeaponPrimaryAttack( iEnt )
@@ -151,6 +173,7 @@ public forward_GlockPrimaryAttack_Post( iEnt )
 public event_CurWeapon( id )
 {
 	new iCurWeapon = read_data( 2 )
+	
 	if ( !g_bInZoom[ id ] && ( iCurWeapon == CSW_SG550 || iCurWeapon == CSW_G3SG1 ) )
 	{
 		message_begin( MSG_ONE_UNRELIABLE, g_iMsgId_CurWeapon, _, id )
