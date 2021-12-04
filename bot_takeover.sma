@@ -1,10 +1,10 @@
-#include <amxmodx>
-#include <amxmisc>
-#include <cstrike>
-#include <hamsandwich>
-#include <fakemeta>
-#include <fakemeta_Util>
-#include <dhudmessage>
+#include < amxmodx >
+#include < amxmisc >
+#include < cstrike >
+#include < hamsandwich >
+#include < fakemeta >
+#include < fakemeta_Util >
+#include < dhudmessage >
 
 #tryinclude <cstrike_pdatas>
 
@@ -194,9 +194,11 @@ public forward_Spawn_Post( id )
 	set_pev( iTarget, pev_health, 0.0 )
 	set_pev( iTarget, pev_deadflag, DEAD_DEAD )
 	
+	const SCOREATTRIB_DEAD = ( 1 << 0 )
+	
 	message_begin( MSG_BROADCAST, g_iMsgId_ScoreAttrib )
 	write_byte( iTarget )
-	write_byte( ( 1 << 0 ) )
+	write_byte( SCOREATTRIB_DEAD )
 	message_end()
 	
 	g_iBotIndex[ id ] = 0
