@@ -164,8 +164,8 @@ public forward_Spawn_Post( id )
 	engfunc( EngFunc_SetOrigin, id, flOrigin )
 	engfunc( EngFunc_SetOrigin, iTarget, Float:{ 0.0, 0.0, -4096.0 } )
 	
-	fm_strip_user_weapons( id )
-	fm_give_item( id, "weapon_knife" )
+	//fm_strip_user_weapons( id )
+	//fm_give_item( id, "weapon_knife" )
 
 	/*
 	const MAX_AMMO_SLOTS = 15
@@ -177,29 +177,44 @@ public forward_Spawn_Post( id )
 	    set_pdata_int( id, m_rgAmmo_CBasePlayer[ rgAmmoSlot ], iBpAmmo[ rgAmmoSlot ] )
 	}
 	*/
-	new iItem, iSlot
+	new iItem[ 2 ], iSlot
 	
-	for ( iSlot = 1; iSlot <= 5; iSlot++ )
+	for ( iSlot = 1; iSlot <= 4; iSlot++ )
 	{
-		while ( ( iItem = get_pdata_cbase( iTarget, m_rgpPlayerItems_CBasePlayer[ iSlot ] ) ) > 0 )
+		if ( iSlot == 3 )
 		{
-			ExecuteHamB( Ham_RemovePlayerItem, iTarget, iItem )
-			ExecuteHamB( Ham_AddPlayerItem, id, iItem )
-			ExecuteHamB( Ham_Item_AttachToPlayer, iItem, id )
+			continue
+		}
+		
+		while ( ( iItem[ 0 ] = get_pdata_cbase( iTarget, m_rgpPlayerItems_CBasePlayer[ iSlot ] ) ) > 0 )
+		{
+			iItem[ 1 ] =  get_pdata_cbase( id, m_rgpPlayerItems_CBasePlayer[ iSlot ] )
 			
-			switch ( iSlot )
+			if ( iItem[ 1 ] > 0 )
 			{
-				case 1, 2, 4:
-				{
-					new iAmmoId = ExecuteHam( Ham_Item_PrimaryAmmoIndex, iItem )
-					new iBpAmmo = get_pdata_int( iTarget, m_rgAmmo_CBasePlayer[ iAmmoId ] )
-					
-					set_pdata_int( id, m_rgAmmo_CBasePlayer[ iAmmoId ], iBpAmmo )
-				}
-				case 5: cs_set_user_plant( id )
+				ExecuteHamB( Ham_Weapon_RetireWeapon, iItem[ 1 ] )
+				ExecuteHamB( Ham_RemovePlayerItem, id, iItem[ 1 ] )
+				user_has_weapon( id, get_pdata_int( iItem[ 1 ], m_iId, 4 ), 0 )
+				ExecuteHamB( Ham_Item_Kill, iItem[ 1 ] )
 			}
+			
+			ExecuteHamB( Ham_RemovePlayerItem, iTarget, iItem[ 0 ] )
+			ExecuteHamB( Ham_AddPlayerItem, id, iItem[ 0 ] )
+			ExecuteHamB( Ham_Item_AttachToPlayer, iItem[ 0 ], id )
+			
+			new iAmmoId = ExecuteHam( Ham_Item_PrimaryAmmoIndex, iItem[ 0 ] )
+			new iBpAmmo = get_pdata_int( iTarget, m_rgAmmo_CBasePlayer[ iAmmoId ] )
+			
+			set_pdata_int( id, m_rgAmmo_CBasePlayer[ iAmmoId ], iBpAmmo )
 		}
 	}
+	
+	if ( pev( iTarget, pev_weapons ) & ( 1 << CSW_C4 ) )
+	{
+		fm_give_item( id, "weapon_c4" )
+		cs_set_user_plant( id )
+	}
+
 	/*
 	new const EQUIP_LIST[] = { CSW_HEGRENADE, CSW_FLASHBANG, CSW_SMOKEGRENADE, CSW_C4 }
 	new const EQUIP_NAME[][] = { "weapon_hegrenade", "weapon_flashbang", "weapon_smokegrenade", "weapon_c4" }

@@ -27,7 +27,7 @@ public plugin_init()
 
 	cvar_showteam 	= register_cvar("amx_showc4timer", "3")
 	cvar_flash 	= register_cvar("amx_showc4flash", "0")
-	cvar_sprite 	= register_cvar("amx_showc4sprite", "2")
+	cvar_sprite 	= register_cvar("amx_showc4sprite", "0")
 	cvar_msg 	= register_cvar("amx_showc4msg", "0")
 	mp_c4timer 	= get_cvar_pointer("mp_c4timer")
 	
@@ -45,7 +45,7 @@ public plugin_cfg()
 
 public event_hltv()
 {
-	plugin_cfg()
+	g_c4timer = get_pcvar_num(mp_c4timer)
 	g_roundended = false
 }
 
@@ -81,7 +81,7 @@ public update_timer(id)
 	
 	message_begin(MSG_ONE_UNRELIABLE, g_msg_scenario, _, id)
 	write_byte(1)
-	write_string(g_timersprite[clamp(get_pcvar_num(cvar_sprite), 0, (sizeof(g_timersprite) - 1))])
+	write_string(g_timersprite[clamp(get_pcvar_num(cvar_sprite), 0, sizeof(g_timersprite)-1)])
 	write_byte(150)
 	write_short(get_pcvar_num(cvar_flash) ? 20 : 0)
 	message_end()
