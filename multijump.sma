@@ -1,6 +1,7 @@
 #include <amxmodx>
 #include <amxmisc>
 #include <engine>
+#include <hamsandwich>
 
 #define ADMINACCESS ADMIN_CHAT
 
@@ -10,8 +11,9 @@ new bool:dojump[33] = false
 public plugin_init()
 {
 	register_plugin("MultiJump","1.1","twistedeuphoria")
-	register_cvar("amx_maxjumps","1")
+	register_cvar("amx_maxjumps","999")
 	register_cvar("amx_mjadminonly","0")
+	RegisterHam(Ham_TakeDamage, "player", "OnCBasePlayer_TakeDamage")
 }
 
 public client_putinserver(id)
@@ -64,3 +66,8 @@ public client_PostThink(id)
 	}
 	return PLUGIN_CONTINUE
 }	
+
+public OnCBasePlayer_TakeDamage( id, iInflictor, iAttacker, Float:flDamage, bitsDamageType ) // return int
+{
+    return ( bitsDamageType & DMG_FALL ) ? HAM_SUPERCEDE : HAM_IGNORED
+} 
