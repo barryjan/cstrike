@@ -17,12 +17,17 @@
 #define m_iUserPrefs 		510
 #define USERPREFS_HAS_SHIELD 	(1<<24)
 #define FIRE_RATE_GLOCK 	0.0545
-#define MAX_INACCURACY 		2
+#define MAX_INACCURACY 		1
 
 new g_iMsgId_CurWeapon
 new g_iMsgId_TextMsg
+new g_iMsgId_WeaponList
 
+new g_iOldClip
+new g_iResetDuckFlag
+new g_iResetZoom
 new g_bInZoom[ MAX_PLAYERS + 1 ]
+
 
 public plugin_init() 
 {
@@ -32,42 +37,139 @@ public plugin_init()
 		.version	= "1.0",
 		.author 	= "BARRY."
 	)
-
-	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_m249", 	"forward_WeaponPrimaryAttack" )
-	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_mac10", "forward_WeaponPrimaryAttack" )
-	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_tmp", 	"forward_WeaponPrimaryAttack" )
-	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_sg550",	"forward_WeaponPrimaryAttack" )
-
-	RegisterHam( Ham_Item_PostFrame,	"weapon_m249",	"forward_ItemPostFrame_Post", .Post = 1 )
-	RegisterHam( Ham_Item_PostFrame,       	"weapon_mac10",	"forward_ItemPostFrame_Post", .Post = 1 )
-	RegisterHam( Ham_Item_PostFrame,       	"weapon_tmp",	"forward_ItemPostFrame_Post", .Post = 1 )
-	RegisterHam( Ham_Item_PostFrame,       	"weapon_sg550",	"forward_ItemPostFrame_Post", .Post = 1 )
 	
-	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_glock18", "forward_GlockPrimaryAttack_Post", .Post = 1 )
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_elite", "forward_AutoPrimaryAttack" )
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_fiveseven", "forward_AutoPrimaryAttack" )
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_elite", "forward_AutoPrimaryAttack_Post", .Post = 1 )
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_fiveseven", "forward_AutoPrimaryAttack_Post", .Post = 1 )
+	
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_glock18", "forward_GlockPrimaryAttack_Post", .Post = 1 )	
 	RegisterHam( Ham_Weapon_SecondaryAttack,"weapon_glock18", "forward_GlockSecondaryAttack" )
 	RegisterHam( Ham_Item_Deploy, 		"weapon_glock18", "forward_GlockDeploy_Post", .Post = 1 )
 	RegisterHam( Ham_Item_PostFrame, 	"weapon_glock18", "forward_GlockPostFrame" )
 	
-	new const szPrimaryWeapons[][] = { "weapon_tmp", "weapon_mac10", "weapon_mp5navy", "weapon_ump45", "weapon_p90", "weapon_m249", 
-					"weapon_galil", "weapon_famas", "weapon_ak47", "weapon_m4a1", "weapon_sg552", "weapon_aug" }
-					
-	for ( new i = 0; i < sizeof ( szPrimaryWeapons ); i++ )
+	RegisterHam( Ham_Item_PostFrame, 	"weapon_famas",	  "forward_FamasPostFrame_Post", .Post = 1 )
+	
+	RegisterHam( Ham_AddPlayerItem, 	"player", 	  "forward_ShotgunAddPlayerItem" )
+	RegisterHam( Ham_Item_AddToPlayer, 	"weapon_m3", 	  "forward_ShotgunAddToPlayer_Post", .Post = 1 )
+	RegisterHam( Ham_Item_ItemSlot, 	"weapon_m3",	  "forward_ShotgunItemSlot" )
+
+	new const szSniperWeapons[][] = { "weapon_sg550", "weapon_g3sg1", "weapon_scout" }
+	
+	for ( new i = 0; i < sizeof ( szSniperWeapons ); i++ )
 	{
-		RegisterHam( Ham_Weapon_PlayEmptySound,  szPrimaryWeapons[ i ], "forward_WeaponPlayEmptySound" )
+		RegisterHam( Ham_Weapon_PrimaryAttack,	szSniperWeapons[ i ], "forward_SnprPrimaryAttack" )
+		RegisterHam( Ham_Weapon_PrimaryAttack,	szSniperWeapons[ i ], "forward_SnprPrimaryAttack_Post", .Post = 1 )
+	}
+
+	new const szAccurateWeapons[][] = { "weapon_m249", "weapon_sg550", "weapon_mp5navy", 
+					    "weapon_p90", "weapon_mac10", "weapon_tmp", "weapon_ump45" }
+
+	for ( new i = 0; i < sizeof ( szAccurateWeapons ); i++ )
+	{				
+		RegisterHam( Ham_Weapon_PrimaryAttack, 	szAccurateWeapons[ i ], "forward_PrimaryAttack_Post", .Post = 1 )
 	}
 	
-	register_event( "CurWeapon", 	"event_CurWeapon", 	"be", "1=1" )
-	register_event( "SetFOV", 	"event_SetFOV", 	"be" )
+	new const szAutoWeapons[][] = { 	"weapon_tmp", "weapon_mac10", "weapon_mp5navy", "weapon_ump45", "weapon_p90", "weapon_m249", 
+					"weapon_galil", "weapon_famas", "weapon_ak47", "weapon_m4a1", "weapon_sg552", "weapon_aug" }
+					
+	for ( new i = 0; i < sizeof ( szAutoWeapons ); i++ )
+	{
+		RegisterHam( Ham_Weapon_PlayEmptySound,  szAutoWeapons[ i ], "forward_WeaponPlayEmptySound" )
+	}
+	
+	register_event( "CurWeapon", "event_CurWeapon", "be", "1=1" )
+	register_event( "SetFOV", "event_SetFOV", "be" )
 
 	g_iMsgId_CurWeapon = get_user_msgid( "CurWeapon" )
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
+	g_iMsgId_WeaponList = get_user_msgid( "WeaponList" )
+}
+
+public forward_SnprPrimaryAttack( iEnt )
+{
+	static id; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
+	static bitFlags; bitFlags = pev( id, pev_flags )
+	static iFOV; iFOV = get_pdata_int( id, m_iFOV, 5 )
+
+	g_iResetDuckFlag = ( bitFlags & FL_DUCKING ) ? 0 : 1
+	g_iResetZoom = iFOV >= 90 ? 1 : 0
+	set_pev( id, pev_flags, ( bitFlags | FL_DUCKING ) )
+	
+	if ( iFOV )
+	{ 
+		set_pdata_int( id, m_iFOV, 15, 5 )
+		set_pdata_int( id, m_iClientFOV, 15, 5 )
+		set_pdata_int( id, m_iLastZoom, 15, 5 )
+	}
+	
+	if ( get_pdata_int( iEnt, m_iId, 4 ) == CSW_SG550 )
+	{
+		set_pdata_float( iEnt, m_flAccuracy, 1.0, 4 )
+	}
+}
+
+public forward_SnprPrimaryAttack_Post( iEnt )
+{
+	static id; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
+	
+	if ( g_iResetDuckFlag )
+	{
+		set_pev( id, pev_flags, ( pev( id, pev_flags ) & ~FL_DUCKING ) )
+	}
+	
+	if ( g_iResetZoom )
+	{ 
+		set_pdata_int( id, m_iFOV, 90, 5 )
+	}
+	
+	if ( get_pdata_int( iEnt, m_iId, 4 ) == CSW_SCOUT )
+	{
+		set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.95, 4 )
+	}
+}
+
+public forward_ShotgunAddPlayerItem( id, iEnt )
+{
+	if ( get_pdata_int( iEnt, m_iId, 4 ) == CSW_M3 )
+	{
+		new iSecWeapon, szWeaponName[ 32 ]
+
+		if ( ( iSecWeapon = get_pdata_cbase( id, m_rgpPlayerItems_CBasePlayer[ 2 ] ) ) > 0 )
+		{
+			get_weaponname( get_pdata_int( iSecWeapon, m_iId, 4 ), szWeaponName, charsmax( szWeaponName ) )
+			engclient_cmd( id, "drop", szWeaponName )
+		}
+	}
+}
+
+public forward_ShotgunAddToPlayer_Post( iEnt )
+{
+	emessage_begin( MSG_ONE, g_iMsgId_WeaponList, _, get_pdata_cbase( iEnt, m_pPlayer, 4 ) )
+	ewrite_string( "weapon_m3" )	// WeaponName
+	ewrite_byte( 5 )    		// PrimaryAmmoID
+	ewrite_byte( 32 )    		// PrimaryAmmoMaxAmount
+	ewrite_byte( -1 )   		// SecondaryAmmoID
+	ewrite_byte( -1 )     		// SecondaryAmmoMaxAmount
+	ewrite_byte( 1 )    		// SlotID (0...N)
+	ewrite_byte( 1 ) 		// NumberInSlot (1...N)
+	ewrite_byte( CSW_M3 )    	// WeaponID
+	ewrite_byte( 0 )      		// Flags
+	emessage_end()
+}
+
+public forward_ShotgunItemSlot( iEnt )
+{
+	SetHamReturnInteger( 2 )
+	
+	return HAM_SUPERCEDE
 }
 
 public forward_WeaponPlayEmptySound( iEnt )
 {
-	new iSecWeapon = get_pdata_cbase( get_pdata_cbase( iEnt, m_pPlayer, 4 ), m_rgpPlayerItems_CBasePlayer[ 2 ] )
+	new iSecWeapon
 	
-	if ( iSecWeapon )
+	if ( ( iSecWeapon = get_pdata_cbase( get_pdata_cbase( iEnt, m_pPlayer, 4 ), m_rgpPlayerItems_CBasePlayer[ 2 ] ) ) > 0 )
 	{
 		if ( get_pdata_int( iEnt, m_iShotFired, 4 ) > 4 )
 		{
@@ -77,21 +179,39 @@ public forward_WeaponPlayEmptySound( iEnt )
 	}
 }
 
-public forward_WeaponPrimaryAttack( iEnt )
-{
-	switch ( get_pdata_int( iEnt, m_iId, 4 ) )
-	{
-		case CSW_SG550: set_pdata_float( iEnt, m_flAccuracy, 1.0, 4 )
-		default: set_pdata_float( iEnt, m_flAccuracy, 0.0, 4 )
-	}
-}
-
-public forward_ItemPostFrame_Post( iEnt )
+public forward_PrimaryAttack_Post( iEnt )
 {
 	if ( get_pdata_int( iEnt, m_iShotFired, 4 ) > MAX_INACCURACY )
 	{
-		set_pdata_int( iEnt, m_iShotFired, MAX_INACCURACY, 4 )
+		set_pdata_int( iEnt, m_iShotFired, 0, 4 )
 	}
+}
+
+public forward_FamasPostFrame_Post( iEnt ) 
+{
+	set_pdata_float( iEnt, m_flFamasBurstSpread, 0.0, 4 )
+}
+
+public forward_AutoPrimaryAttack( iEnt )
+{
+	g_iOldClip = get_pdata_int( iEnt, m_iClip, 4 )
+}
+
+public forward_AutoPrimaryAttack_Post( iEnt )
+{
+	if ( g_iOldClip > get_pdata_int( iEnt, m_iClip, 4 ) )
+	{
+		static Float:flPunchAngle[ 3 ]
+		
+		pev( get_pdata_cbase( iEnt, m_pPlayer, 4 ), pev_punchangle, flPunchAngle )
+		
+		flPunchAngle[ 0 ] *= 0.65
+		
+		set_pev( get_pdata_cbase( iEnt, m_pPlayer, 4 ), pev_punchangle, flPunchAngle )
+	}
+	
+	set_pdata_int( iEnt, m_iShotFired, 0, 4 )
+	set_pdata_float( iEnt, m_flAccuracy, 1.0, 4 )
 }
 
 public forward_GlockDeploy_Post( iEnt )
@@ -165,7 +285,7 @@ public forward_GlockPrimaryAttack_Post( iEnt )
 			set_pdata_float( iEnt, m_flGlock18Shoot, 0.0, 4 )
 			set_pdata_float( iEnt, m_flNextPrimaryAttack, FIRE_RATE_GLOCK, 4 )
 			set_pdata_float( iEnt, m_flNextSecondaryAttack, FIRE_RATE_GLOCK, 4 )
-		} 
+		}
 	}
 }
 
@@ -173,7 +293,9 @@ public event_CurWeapon( id )
 {
 	new iCurWeapon = read_data( 2 )
 	
-	if ( !g_bInZoom[ id ] && ( iCurWeapon == CSW_SG550 || iCurWeapon == CSW_G3SG1 ) )
+	const bitSniperWeapons = ( 1 << CSW_SG550 | 1 << CSW_G3SG1 | 1 << CSW_SCOUT )
+	
+	if ( !g_bInZoom[ id ] && bitSniperWeapons & ( 1 << iCurWeapon ) )
 	{
 		message_begin( MSG_ONE_UNRELIABLE, g_iMsgId_CurWeapon, _, id )
 		write_byte( 1 )

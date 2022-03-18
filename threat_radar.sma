@@ -122,7 +122,7 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 	
 	static const szEnemyTeam[][] = { "", "CT", "TERRORIST" }
 
-	get_players( iPlayers, iNum, "ae", szEnemyTeam[ get_user_team( iInvoker ) ] )
+	get_players( iPlayers, iNum, "aceh", szEnemyTeam[ get_user_team( iInvoker ) ] )
 	get_user_origin( iInvoker, iVecOrigin[ 0 ] )
 
 	for ( new i = 0; i < iNum; i++ )
