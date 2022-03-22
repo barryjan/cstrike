@@ -21,13 +21,11 @@
 
 new g_iMsgId_CurWeapon
 new g_iMsgId_TextMsg
-new g_iMsgId_WeaponList
 
 new g_iOldClip
 new g_iResetDuckFlag
 new g_iResetZoom
 new g_bInZoom[ MAX_PLAYERS + 1 ]
-
 
 public plugin_init() 
 {
@@ -50,10 +48,6 @@ public plugin_init()
 	
 	RegisterHam( Ham_Item_PostFrame, 	"weapon_famas",	  "forward_FamasPostFrame_Post", .Post = 1 )
 	
-	RegisterHam( Ham_AddPlayerItem, 	"player", 	  "forward_ShotgunAddPlayerItem" )
-	RegisterHam( Ham_Item_AddToPlayer, 	"weapon_m3", 	  "forward_ShotgunAddToPlayer_Post", .Post = 1 )
-	RegisterHam( Ham_Item_ItemSlot, 	"weapon_m3",	  "forward_ShotgunItemSlot" )
-
 	new const szSniperWeapons[][] = { "weapon_sg550", "weapon_g3sg1", "weapon_scout" }
 	
 	for ( new i = 0; i < sizeof ( szSniperWeapons ); i++ )
@@ -83,7 +77,6 @@ public plugin_init()
 
 	g_iMsgId_CurWeapon = get_user_msgid( "CurWeapon" )
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
-	g_iMsgId_WeaponList = get_user_msgid( "WeaponList" )
 }
 
 public forward_SnprPrimaryAttack( iEnt )
@@ -127,42 +120,6 @@ public forward_SnprPrimaryAttack_Post( iEnt )
 	{
 		set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.95, 4 )
 	}
-}
-
-public forward_ShotgunAddPlayerItem( id, iEnt )
-{
-	if ( get_pdata_int( iEnt, m_iId, 4 ) == CSW_M3 )
-	{
-		new iSecWeapon, szWeaponName[ 32 ]
-
-		if ( ( iSecWeapon = get_pdata_cbase( id, m_rgpPlayerItems_CBasePlayer[ 2 ] ) ) > 0 )
-		{
-			get_weaponname( get_pdata_int( iSecWeapon, m_iId, 4 ), szWeaponName, charsmax( szWeaponName ) )
-			engclient_cmd( id, "drop", szWeaponName )
-		}
-	}
-}
-
-public forward_ShotgunAddToPlayer_Post( iEnt )
-{
-	emessage_begin( MSG_ONE, g_iMsgId_WeaponList, _, get_pdata_cbase( iEnt, m_pPlayer, 4 ) )
-	ewrite_string( "weapon_m3" )	// WeaponName
-	ewrite_byte( 5 )    		// PrimaryAmmoID
-	ewrite_byte( 32 )    		// PrimaryAmmoMaxAmount
-	ewrite_byte( -1 )   		// SecondaryAmmoID
-	ewrite_byte( -1 )     		// SecondaryAmmoMaxAmount
-	ewrite_byte( 1 )    		// SlotID (0...N)
-	ewrite_byte( 1 ) 		// NumberInSlot (1...N)
-	ewrite_byte( CSW_M3 )    	// WeaponID
-	ewrite_byte( 0 )      		// Flags
-	emessage_end()
-}
-
-public forward_ShotgunItemSlot( iEnt )
-{
-	SetHamReturnInteger( 2 )
-	
-	return HAM_SUPERCEDE
 }
 
 public forward_WeaponPlayEmptySound( iEnt )
@@ -309,3 +266,6 @@ public event_SetFOV( id )
 {
 	g_bInZoom[ id ] = ( 0 < read_data( 1 ) < 55 )
 }
+/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
+*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
+*/

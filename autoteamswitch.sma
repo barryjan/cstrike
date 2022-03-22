@@ -75,6 +75,7 @@ public roundend()
 		for( new i; i < num; i++ )
 			add_delay( players[i] ); // Prevent Server Crash with a lot of people.
 			
+		server_cmd( "sv_restart 3" );
 	}
 }
 
@@ -116,3 +117,6 @@ add_delay( id )
 		case 24..32: set_task( 0.4, "changeTeam", id );
 	}
 }
+/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
+*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
+*/
