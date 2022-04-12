@@ -2,6 +2,7 @@
 #include < cstrike > 
 #include < hamsandwich >
 #include < fakemeta >
+#include < xs >
 
 #tryinclude < cstrike_pdatas >
 
@@ -21,11 +22,12 @@
 
 new g_iMsgId_CurWeapon
 new g_iMsgId_TextMsg
-
 new g_iOldClip
 new g_iResetDuckFlag
 new g_iResetZoom
 new g_bInZoom[ MAX_PLAYERS + 1 ]
+new g_iForward_Spawn
+new g_iRegisteredCZBots
 
 public plugin_init() 
 {
@@ -35,7 +37,7 @@ public plugin_init()
 		.version	= "1.0",
 		.author 	= "BARRY."
 	)
-	
+
 	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_elite", "forward_AutoPrimaryAttack" )
 	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_fiveseven", "forward_AutoPrimaryAttack" )
 	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_elite", "forward_AutoPrimaryAttack_Post", .Post = 1 )
@@ -72,11 +74,153 @@ public plugin_init()
 		RegisterHam( Ham_Weapon_PlayEmptySound,  szAutoWeapons[ i ], "forward_WeaponPlayEmptySound" )
 	}
 	
+	RegisterHam( Ham_Item_Deploy, "weapon_knife", "forward_KnifeDeploy_Post", .Post = 1 )
+	
+	RegisterHam( Ham_TakeDamage, "player", "forward_TakeDamage" )
+	RegisterHam( Ham_TraceAttack, "player", "forward_TraceAttack" )
+	
 	register_event( "CurWeapon", "event_CurWeapon", "be", "1=1" )
 	register_event( "SetFOV", "event_SetFOV", "be" )
 
+	if ( g_iForward_Spawn )
+	{
+		unregister_forward( FM_Spawn, g_iForward_Spawn )
+	}
+	
+	new szModName[ 6 ]
+	
+	get_modname( szModName, charsmax( szModName ) )
+	
+	if ( !equal( szModName, "czero" ) || cvar_exists( "pb_version" ) )
+	{
+		g_iRegisteredCZBots = -1
+	}
+
 	g_iMsgId_CurWeapon = get_user_msgid( "CurWeapon" )
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
+}
+
+public forward_KnifeDeploy_Post( iEnt )
+{
+	static id; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
+	
+	static Float:flOrigin[ 3 ], Float:flEndOrigin[ 3 ]
+	pev( id, pev_origin, flOrigin )
+	velocity_by_aim( id, 31, flEndOrigin )
+	xs_vec_add( flEndOrigin, flOrigin, flEndOrigin )
+	
+	static pTrace
+	engfunc( EngFunc_TraceHull, flEndOrigin, flEndOrigin, DONT_IGNORE_MONSTERS, HULL_HEAD, id, pTrace )
+	
+	if ( get_tr2( pTrace, TR_pHit ) > 0 )
+	{	
+		set_pdata_float( id, m_flNextAttack, 0.0, 5 )
+		ExecuteHamB( Ham_Weapon_SecondaryAttack, iEnt )
+		
+		set_task( 0.6, "task_LastWeapon", id )
+	}
+	
+	free_tr2( pTrace )
+
+}
+
+public task_LastWeapon( id )
+{
+	if ( !is_user_alive( id ) )
+	{
+		return
+	}
+	
+	new iEnt = get_pdata_cbase( id, m_pLastItem, 5 )
+	
+	if ( pev_valid( iEnt ) )
+	{
+		set_pdata_cbase( id, m_pActiveItem, iEnt )
+		ExecuteHamB( Ham_Item_Deploy, iEnt )
+	}
+}
+
+public client_putinserver( id )
+{
+	if ( !g_iRegisteredCZBots && is_user_bot( id ) )
+	{
+		set_task( 0.1, "register_bots", id )
+	}
+}
+
+public register_bots( id )
+{
+	if ( !g_iRegisteredCZBots && is_user_connected( id ) )
+	{
+		g_iRegisteredCZBots = 1
+		
+		RegisterHamFromEntity( Ham_TakeDamage, id, "forward_TakeDamage" )
+		RegisterHamFromEntity( Ham_TraceAttack, id, "forward_TraceAttack" )
+	}
+}
+
+public forward_TakeDamage( id, iInflictor, iAttacker, Float:flDamage )
+{
+	if ( is_user_alive( iAttacker ) && get_user_weapon( iAttacker ) == CSW_KNIFE )
+	{
+		if ( flDamage >= 65.0 )
+		{
+			SetHamParamFloat( 4, 195.0 )
+		}
+		
+		return HAM_HANDLED
+	}
+	return HAM_IGNORED
+}
+
+public forward_TraceAttack( id, iAttacker, Float:flDamage, Float:flDirection[ 3 ], pTrace, bitDamageBits )
+{
+	if ( !( bitDamageBits & DMG_BULLET ) )
+	{
+		return HAM_IGNORED
+	}
+	
+	const bitsBodyArmor = ( 1 << HIT_CHEST | 1 << HIT_STOMACH )
+	
+	if ( ( 1 << get_tr2( pTrace, TR_iHitgroup ) ) & bitsBodyArmor )
+	{
+		static Float:flArmor; flArmor = float( pev( id, pev_armorvalue ) )
+		
+		if ( flArmor > 0.0 )
+		{
+			flArmor -= flDamage
+			
+			if ( flArmor > 0.0 )
+			{
+				#define HIT_SHIELD 8 
+				set_tr2( pTrace, TR_iHitgroup, HIT_SHIELD )
+				set_pev( id, pev_armorvalue, floatmax( 0.0, flArmor ) )
+				//SetHamParamFloat( 3, 0.0 )
+			}
+		}
+	}
+	return HAM_IGNORED
+}
+
+public plugin_precache()
+{
+	g_iForward_Spawn = register_forward( FM_Spawn, "forward_Spawn" )
+}
+
+public forward_Spawn( iEnt )
+{
+	static szClassname[ 32 ]
+	
+	pev( iEnt, pev_classname, szClassname, charsmax( szClassname ) )
+	
+	if ( equal( szClassname, "func_door_rotating" ) 
+	||   equal( szClassname, "func_door" ) )
+	{
+		engfunc( EngFunc_RemoveEntity, iEnt )
+
+		return FMRES_SUPERCEDE
+	}
+	return FMRES_IGNORED
 }
 
 public forward_SnprPrimaryAttack( iEnt )

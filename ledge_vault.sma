@@ -82,7 +82,7 @@ public forward_PlayerPostThink( id )
 	if ( eVar[ flFraction ] < 1.0 && eVar[ flPlaneNormal ][ 2 ] > 0.7 )
 	{
 		global_get( glb_v_forward, eVar[ flForward ] )
-	
+		
 		xs_vec_mul_scalar( eVar[ flForward ], 5.0, eVar[ flForward ] )
 		xs_vec_add( eVar[ flOrigin ], eVar[ flForward ], eVar[ flTraceStart ] )
 		
@@ -90,15 +90,20 @@ public forward_PlayerPostThink( id )
 	
 		engfunc( EngFunc_TraceHull, eVar[ flTraceStart ], eVar[ flTraceStart ], DONT_IGNORE_MONSTERS, HULL_HEAD, id, eVar[ pLedgeTrace ] )
 		
+		get_tr2( eVar[ pLedgeTrace ], TR_flFraction, eVar[ flFraction ] )
 		get_tr2( eVar[ pLedgeTrace ], TR_vecEndPos, eVar[ flEndPosition ] )
+		get_tr2( eVar[ pLedgeTrace ], TR_vecPlaneNormal, eVar[ flPlaneNormal ] )
+		
+		//xs_vec_mul_scalar( eVar[ flPlaneNormal ], 10.0, eVar[ flPlaneNormal ] )
+		xs_vec_add( eVar[ flEndPosition ], eVar[ flPlaneNormal ], eVar[ flEndPosition ] )
 		
 		if ( 	!get_tr2( eVar[ pLedgeTrace ], TR_StartSolid )
 		&& 	!get_tr2( eVar[ pLedgeTrace ], TR_AllSolid )
-		&& 	 get_tr2( eVar[ pLedgeTrace ], TR_InOpen ) 	)
+		&& 	 get_tr2( eVar[ pLedgeTrace ], TR_InOpen )	)
 		{
 			set_pev( id, pev_fuser2, 1300.0 )
 			set_pev( id, pev_flags, eVar[ iFlags ] | FL_DUCKING )
-			
+
 			engfunc( EngFunc_SetSize, id, Float:{ -16.0, -16.0, -18.0 }, Float:{ 16.0, 16.0, 18.0 } )
 			engfunc( EngFunc_SetOrigin, id, eVar[ flEndPosition ] )
 		}
@@ -107,3 +112,6 @@ public forward_PlayerPostThink( id )
 	
 	return FMRES_IGNORED
 }
+/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
+*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
+*/
