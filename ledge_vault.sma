@@ -13,7 +13,7 @@ enum _:VarList
 	Float:flForward[ 3 ],
 	Float:flFraction,
 	Float:flFallVelocity,
-	Float:pCvarMaxDistance,
+	Float:flMaxDistance,
 	iWaterLevel,
 	iButton,
 	iOldButtons,
@@ -52,8 +52,8 @@ public forward_PlayerPostThink( id )
 	eVar[ iButton ] = pev( id, pev_button )
 	eVar[ iOldButtons ] = pev( id, pev_oldbuttons )
 	eVar[ iWaterLevel ] = pev( id, pev_waterlevel )
+	eVar[ flMaxDistance ] = _:float( get_pcvar_num( g_pCvar_MaxDistance ) )
 	eVar[ pLedgeTrace ] = 0
-	eVar[ pCvarMaxDistance ] = _:float( get_pcvar_num( g_pCvar_MaxDistance ) )
 
 	pev( id, pev_origin, eVar[ flOrigin ] )
 	pev( id, pev_flFallVelocity, eVar[ flFallVelocity ] )
@@ -70,7 +70,7 @@ public forward_PlayerPostThink( id )
 	xs_vec_add( eVar[ flOrigin ], eVar[ flForward ], eVar[ flTraceStart ] )
 	xs_vec_copy( eVar[ flTraceStart ], eVar[ flTraceEnd ] )
 	
-	eVar[ flTraceStart ][ 2 ] += eVar[ iFlags ] & FL_DUCKING ? eVar[ pCvarMaxDistance ] : eVar[ pCvarMaxDistance ] - 18.0
+	eVar[ flTraceStart ][ 2 ] += eVar[ iFlags ] & FL_DUCKING ? eVar[ flMaxDistance ] : eVar[ flMaxDistance ] - 18.0
 	//eVar[ flTraceEnd ][ 2 ] -= ( eVar[ iFlags ] & FL_DUCKING ? 18.0 : 36.0 ) - 17.0 // min offset
 	
 	engfunc( EngFunc_TraceLine, eVar[ flTraceStart ], eVar[ flTraceEnd ], DONT_IGNORE_MONSTERS, id, eVar[ pLedgeTrace ] )
@@ -101,17 +101,24 @@ public forward_PlayerPostThink( id )
 		&& 	!get_tr2( eVar[ pLedgeTrace ], TR_AllSolid )
 		&& 	 get_tr2( eVar[ pLedgeTrace ], TR_InOpen )	)
 		{
-			set_pev( id, pev_fuser2, 1300.0 )
-			set_pev( id, pev_flags, eVar[ iFlags ] | FL_DUCKING )
-
-			engfunc( EngFunc_SetSize, id, Float:{ -16.0, -16.0, -18.0 }, Float:{ 16.0, 16.0, 18.0 } )
-			engfunc( EngFunc_SetOrigin, id, eVar[ flEndPosition ] )
+			xs_vec_copy( eVar[ flOrigin ], eVar[ flTraceStart ] )
+			xs_vec_set( eVar[ flTraceEnd ], eVar[ flOrigin ][ 0 ], eVar[ flOrigin ][ 1 ], eVar[ flEndPosition ][ 2 ] )
+			
+			engfunc( EngFunc_TraceLine, eVar[ flTraceStart ], eVar[ flTraceEnd ], DONT_IGNORE_MONSTERS, id, eVar[ pLedgeTrace ] )
+			
+			get_tr2( eVar[ pLedgeTrace ], TR_flFraction, eVar[ flFraction ]  )
+			
+			if ( eVar[ flFraction ] == 1.0 )
+			{
+				set_pev( id, pev_fuser2, 1300.0 )
+				set_pev( id, pev_flags, eVar[ iFlags ] | FL_DUCKING )
+	
+				engfunc( EngFunc_SetSize, id, Float:{ -16.0, -16.0, -18.0 }, Float:{ 16.0, 16.0, 18.0 } )
+				engfunc( EngFunc_SetOrigin, id, eVar[ flEndPosition ] )
+			}
 		}
 	}
 	free_tr2( eVar[ pLedgeTrace ] )
 	
 	return FMRES_IGNORED
 }
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
