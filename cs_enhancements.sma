@@ -78,7 +78,7 @@ public plugin_init()
 	
 	RegisterHam( Ham_TakeDamage, "player", "forward_TakeDamage" )
 	RegisterHam( Ham_TraceAttack, "player", "forward_TraceAttack" )
-	
+ 
 	register_event( "CurWeapon", "event_CurWeapon", "be", "1=1" )
 	register_event( "SetFOV", "event_SetFOV", "be" )
 
@@ -100,16 +100,37 @@ public plugin_init()
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
 }
 
+public plugin_precache()
+{
+	g_iForward_Spawn = register_forward( FM_Spawn, "forward_Spawn" )
+}
+
+public forward_Spawn( iEnt )
+{
+	static szClassname[ 32 ]
+	
+	pev( iEnt, pev_classname, szClassname, charsmax( szClassname ) )
+	
+	if ( equal( szClassname, "func_door_rotating" ) 
+	||   equal( szClassname, "func_door" ) )
+	{
+		engfunc( EngFunc_RemoveEntity, iEnt )
+
+		return FMRES_SUPERCEDE
+	}
+	return FMRES_IGNORED
+}
+
 public forward_KnifeDeploy_Post( iEnt )
 {
 	static id; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
-	
 	static Float:flOrigin[ 3 ], Float:flEndOrigin[ 3 ]
+	static pTrace
+	
 	pev( id, pev_origin, flOrigin )
 	velocity_by_aim( id, 31, flEndOrigin )
 	xs_vec_add( flEndOrigin, flOrigin, flEndOrigin )
 	
-	static pTrace
 	engfunc( EngFunc_TraceHull, flEndOrigin, flEndOrigin, DONT_IGNORE_MONSTERS, HULL_HEAD, id, pTrace )
 	
 	if ( get_tr2( pTrace, TR_pHit ) > 0 )
@@ -117,11 +138,10 @@ public forward_KnifeDeploy_Post( iEnt )
 		set_pdata_float( id, m_flNextAttack, 0.0, 5 )
 		ExecuteHamB( Ham_Weapon_SecondaryAttack, iEnt )
 		
-		set_task( 0.6, "task_LastWeapon", id )
+		set_task( 0.65, "task_LastWeapon", id )
 	}
 	
 	free_tr2( pTrace )
-
 }
 
 public task_LastWeapon( id )
@@ -184,43 +204,18 @@ public forward_TraceAttack( id, iAttacker, Float:flDamage, Float:flDirection[ 3 
 	
 	if ( ( 1 << get_tr2( pTrace, TR_iHitgroup ) ) & bitsBodyArmor )
 	{
-		static Float:flArmor; flArmor = float( pev( id, pev_armorvalue ) )
-		
+		static Float:flArmor
+		flArmor = float( pev( id, pev_armorvalue ) ) - flDamage
+
 		if ( flArmor > 0.0 )
 		{
-			flArmor -= flDamage
-			
-			if ( flArmor > 0.0 )
-			{
-				#define HIT_SHIELD 8 
-				set_tr2( pTrace, TR_iHitgroup, HIT_SHIELD )
-				set_pev( id, pev_armorvalue, floatmax( 0.0, flArmor ) )
-				//SetHamParamFloat( 3, 0.0 )
-			}
+			#define HIT_SHIELD 8 
+			set_tr2( pTrace, TR_iHitgroup, HIT_SHIELD )
+			set_pev( id, pev_armorvalue, floatmax( 0.0, flArmor ) )
+			//SetHamParamFloat( 3, 0.0 )
 		}
 	}
 	return HAM_IGNORED
-}
-
-public plugin_precache()
-{
-	g_iForward_Spawn = register_forward( FM_Spawn, "forward_Spawn" )
-}
-
-public forward_Spawn( iEnt )
-{
-	static szClassname[ 32 ]
-	
-	pev( iEnt, pev_classname, szClassname, charsmax( szClassname ) )
-	
-	if ( equal( szClassname, "func_door_rotating" ) 
-	||   equal( szClassname, "func_door" ) )
-	{
-		engfunc( EngFunc_RemoveEntity, iEnt )
-
-		return FMRES_SUPERCEDE
-	}
-	return FMRES_IGNORED
 }
 
 public forward_SnprPrimaryAttack( iEnt )
@@ -410,6 +405,3 @@ public event_SetFOV( id )
 {
 	g_bInZoom[ id ] = ( 0 < read_data( 1 ) < 55 )
 }
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
