@@ -195,7 +195,7 @@ public forward_TakeDamage( id, iInflictor, iAttacker, Float:flDamage )
 
 public forward_TraceAttack( id, iAttacker, Float:flDamage, Float:flDirection[ 3 ], pTrace, bitDamageBits )
 {
-	if ( !( bitDamageBits & DMG_BULLET ) )
+	if ( !( bitDamageBits & DMG_BULLET ) || get_user_weapon( iAttacker) == CSW_KNIFE )
 	{
 		return HAM_IGNORED
 	}
@@ -209,6 +209,7 @@ public forward_TraceAttack( id, iAttacker, Float:flDamage, Float:flDirection[ 3 
 
 		if ( flArmor > 0.0 )
 		{
+			
 			#define HIT_SHIELD 8 
 			set_tr2( pTrace, TR_iHitgroup, HIT_SHIELD )
 			set_pev( id, pev_armorvalue, floatmax( 0.0, flArmor ) )
