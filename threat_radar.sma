@@ -16,7 +16,7 @@ new const g_iGunsWeaponId[] =
 {
     0, CSW_AWP, CSW_G3SG1, CSW_AK47, CSW_SCOUT, CSW_M249, CSW_M4A1, CSW_SG552, CSW_AUG, CSW_SG550,
     CSW_M3, CSW_XM1014, CSW_USP, CSW_MAC10, CSW_UMP45, CSW_FIVESEVEN, CSW_P90, CSW_DEAGLE,
-    CSW_P228, 0, CSW_GLOCK18, CSW_MP5NAVY, 0, CSW_ELITE, CSW_ELITE, 0, 0, CSW_GALIL, CSW_FAMAS
+    CSW_P228, 0, CSW_GLOCK18, CSW_MP5NAVY, CSW_TMP, CSW_ELITE, CSW_ELITE, 0, 0, CSW_GALIL, CSW_FAMAS
 }
 
 new g_registerId_PrecacheEvent
@@ -49,7 +49,7 @@ public plugin_init()
 	
 	g_pCvar_Enable = register_cvar( "amx_treatradar", "1" )
 	g_pCvar_Delay = register_cvar( "amx_treatradar_delay", "0.5" )
-	g_pCvar_MaxDistance = register_cvar( "amx_treatradar_maxdistance", "2000" )
+	g_pCvar_MaxDistance = register_cvar( "amx_treatradar_maxdistance", "3500" )
 	g_pCvar_ShowSuppresedWeapon = register_cvar( "amx_treatradar_showsuppressed", "0" )
 
 	g_iMsgId_HostagePos = get_user_msgid( "HostagePos" )
@@ -83,13 +83,12 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 	{
 		return FMRES_IGNORED
 	}
-	
-	const bitSuppressedWeapons = ( 1 << CSW_M4A1 ) | ( 1 << CSW_USP )
-	
-	if ( bitSuppressedWeapons & ( 1 << g_iGunsWeaponId[ iEventId ] ) )
-	
+
+	if ( !get_pcvar_num( g_pCvar_ShowSuppresedWeapon ) )
 	{
-		if ( !get_pcvar_num( g_pCvar_ShowSuppresedWeapon ) )
+		const bitSuppressedWeapons = ( 1 << CSW_M4A1 ) | ( 1 << CSW_USP ) | ( 1 << CSW_TMP )
+		
+		if ( bitSuppressedWeapons & ( 1 << g_iGunsWeaponId[ iEventId ] ) )
 		{
 			const m_pActiveItem = 373
 			static pActiveItem
@@ -97,6 +96,10 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 			pActiveItem = get_pdata_cbase( iInvoker, m_pActiveItem )
 			
 			if ( pActiveItem && cs_get_weapon_silen( pActiveItem ) )
+			{
+				return FMRES_IGNORED
+			}
+			else if ( ( 1 << CSW_TMP ) & ( 1 << g_iGunsWeaponId[ iEventId ] ) )
 			{
 				return FMRES_IGNORED
 			}
@@ -122,7 +125,8 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 	
 	static const szEnemyTeam[][] = { "", "CT", "TERRORIST" }
 
-	get_players( iPlayers, iNum, "aceh", szEnemyTeam[ get_user_team( iInvoker ) ] )
+	get_players( iPlayers, iNum, "aceh", szEnemyTeam[ _:cs_get_user_team( iInvoker ) ] )
+
 	get_user_origin( iInvoker, iVecOrigin[ 0 ] )
 
 	for ( new i = 0; i < iNum; i++ )
@@ -152,3 +156,6 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 	}
 	return FMRES_HANDLED
 }
+/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
+*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
+*/
