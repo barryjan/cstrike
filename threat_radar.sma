@@ -52,9 +52,7 @@ public plugin_init()
 	unregister_forward( FM_PrecacheEvent, g_registerId_PrecacheEvent, .post = 1 )
 	
 	register_forward( FM_PlaybackEvent , "forward_PlaybackEvent" )
-	
-	register_clcmd( "say /test", "Test" )
-	
+
 	g_pCvar_TreatEnable = register_cvar( "amx_treatradar", "1" )
 	g_pCvar_AllyEnable = register_cvar( "amx_allyradar", "1" )
 	g_pCvar_Delay = register_cvar( "amx_treatradar_delay", "0.5" )
@@ -179,6 +177,3 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 	}
 	return FMRES_HANDLED
 }
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
