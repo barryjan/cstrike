@@ -1,7 +1,9 @@
-#include <amxmodx>
-#include <cstrike>
-#include <fakemeta>
-#include <hamsandwich>
+#include < amxmodx >
+#include < cstrike >
+#include < fakemeta >
+#include < hamsandwich >
+
+#define MAX_PLAYERS 32
 
 new const g_szGunsEvents[][] = 
 {
@@ -21,13 +23,17 @@ new const g_iGunsWeaponId[] =
 
 new g_registerId_PrecacheEvent
 new g_bitGunEventIds
-new g_pCvar_Enable
+new g_pCvar_TreatEnable
+new g_pCvar_AllyEnable
 new g_pCvar_Delay
 new g_pCvar_MaxDistance
 new g_pCvar_ShowSuppresedWeapon
 new g_iMsgId_HostagePos
 new g_iMsgId_HostageK
+new g_iMsgId_SendAudio
 new g_iMaxPlayers
+new Float:g_flEnemyDelay[ MAX_PLAYERS + 1 ]
+new Float:g_flAllyDelay[ MAX_PLAYERS + 1 ]
 
 public plugin_precache() 
 {
@@ -47,13 +53,17 @@ public plugin_init()
 	
 	register_forward( FM_PlaybackEvent , "forward_PlaybackEvent" )
 	
-	g_pCvar_Enable = register_cvar( "amx_treatradar", "1" )
+	register_clcmd( "say /test", "Test" )
+	
+	g_pCvar_TreatEnable = register_cvar( "amx_treatradar", "1" )
+	g_pCvar_AllyEnable = register_cvar( "amx_allyradar", "1" )
 	g_pCvar_Delay = register_cvar( "amx_treatradar_delay", "0.5" )
 	g_pCvar_MaxDistance = register_cvar( "amx_treatradar_maxdistance", "3500" )
 	g_pCvar_ShowSuppresedWeapon = register_cvar( "amx_treatradar_showsuppressed", "0" )
 
 	g_iMsgId_HostagePos = get_user_msgid( "HostagePos" )
 	g_iMsgId_HostageK = get_user_msgid( "HostageK" )
+	g_iMsgId_SendAudio = get_user_msgid("SendAudio")
 	
 	g_iMaxPlayers = get_maxplayers()
 }
@@ -74,12 +84,31 @@ public forward_PrecacheEvent( iType , const szName[] )
 
 public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 {
-	if ( !get_pcvar_num( g_pCvar_Enable ) )
+	if ( !( g_bitGunEventIds & ( 1 << iEventId ) ) || !( 1 <= iInvoker <= g_iMaxPlayers ) )
 	{
 		return FMRES_IGNORED
 	}
 	
-	if ( !( g_bitGunEventIds & ( 1 << iEventId ) ) || !( 1 <= iInvoker <= g_iMaxPlayers ) )
+	static Float:flGameTime
+	static Float:pCvar_Delay
+	
+	flGameTime = get_gametime()
+	pCvar_Delay = get_pcvar_float( g_pCvar_Delay )
+	
+	if ( get_pcvar_num( g_pCvar_AllyEnable ) )
+	{
+		if ( flGameTime >= g_flAllyDelay[ iInvoker ] )
+		{
+			message_begin( MSG_BROADCAST, g_iMsgId_SendAudio )
+			write_byte( iInvoker )
+			write_string( "" )
+			message_end()
+			
+			g_flAllyDelay[ iInvoker ] = flGameTime + pCvar_Delay
+		}
+	}
+	
+	if ( !get_pcvar_num( g_pCvar_TreatEnable ) )
 	{
 		return FMRES_IGNORED
 	}
@@ -106,23 +135,17 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 		}
 	}
 	
-	static Float:flGameTime
-	static Float:flDelay
-	static iVecOrigin[ 2 ][ 3 ]
-	static iPlayers[ 32 ], iNum, id
-	
-	flGameTime = get_gametime()
-	pev( iInvoker, pev_fuser4, flDelay )
-	
-	if ( flGameTime >= flDelay )
+	if ( flGameTime >= g_flEnemyDelay[ iInvoker ] )
 	{	
-		set_pev( iInvoker, pev_fuser4, flGameTime + get_pcvar_float( g_pCvar_Delay ) )
+		g_flEnemyDelay[ iInvoker ] = flGameTime + pCvar_Delay
 	}
 	else
 	{
 	 	return FMRES_IGNORED
 	}
 	
+	static iVecOrigin[ 2 ][ 3 ]
+	static iPlayers[ 32 ], iNum, id
 	static const szEnemyTeam[][] = { "", "CT", "TERRORIST" }
 
 	get_players( iPlayers, iNum, "aceh", szEnemyTeam[ _:cs_get_user_team( iInvoker ) ] )

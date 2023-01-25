@@ -74,6 +74,8 @@ public plugin_init()
 		RegisterHam( Ham_Weapon_PlayEmptySound,  szAutoWeapons[ i ], "forward_WeaponPlayEmptySound" )
 	}
 	
+	
+	
 	RegisterHam( Ham_Item_Deploy, "weapon_knife", "forward_KnifeDeploy_Post", .Post = 1 )
 	
 	RegisterHam( Ham_TakeDamage, "player", "forward_TakeDamage" )
@@ -406,3 +408,6 @@ public event_SetFOV( id )
 {
 	g_bInZoom[ id ] = ( 0 < read_data( 1 ) < 55 )
 }
+/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
+*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
+*/
