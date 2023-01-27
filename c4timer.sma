@@ -81,9 +81,9 @@ public logevent_plantedthebomb()
 	static players[32], num, i
 	switch(showtteam)
 	{
-		case 1: get_players(players, num, "ace", "TERRORIST")
-		case 2: get_players(players, num, "ace", "CT")
-		case 3: get_players(players, num, "ac")
+		case 1: get_players(players, num, "ce", "TERRORIST")
+		case 2: get_players(players, num, "ce", "CT")
+		case 3: get_players(players, num, "c")
 		default: return
 	}
 	for(i = 0; i < num; ++i) set_task(1.0, "update_timer", players[i])
