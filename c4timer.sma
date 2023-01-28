@@ -73,9 +73,6 @@ public logevent_plantedthebomb()
 	if(g_roundended)
 		return
 	
-	g_bombplanted = true
-	g_c4blowtime = get_gametime() + g_c4timer
-	
 	new showtteam = get_pcvar_num(cvar_showteam)
 	
 	static players[32], num, i
@@ -111,6 +108,9 @@ public update_timer(id)
 		set_hudmessage(255, 180, 0, 0.44, 0.87, 2, 6.0, 6.0)
 		show_hudmessage(id, g_message)
 	}
+	
+	g_bombplanted = true
+	g_c4blowtime = get_gametime() + g_c4timer
 }
 
 public forward_Spawn_Post( id )
