@@ -95,9 +95,8 @@ public forward_Player_Jump( id )
 		
 		get_tr2( eVar[ pLedgeTrace ], TR_flFraction, eVar[ flFraction ] )
 		get_tr2( eVar[ pLedgeTrace ], TR_vecEndPos, eVar[ flEndPosition ] )
-		get_tr2( eVar[ pLedgeTrace ], TR_vecPlaneNormal, eVar[ flPlaneNormal ] )
-		
-		//xs_vec_mul_scalar( eVar[ flPlaneNormal ], 10.0, eVar[ flPlaneNormal ] )
+	
+		xs_vec_mul_scalar( eVar[ flPlaneNormal ], 5.0, eVar[ flPlaneNormal ] )
 		xs_vec_add( eVar[ flEndPosition ], eVar[ flPlaneNormal ], eVar[ flEndPosition ] )
 		
 		if ( 	!get_tr2( eVar[ pLedgeTrace ], TR_StartSolid )
