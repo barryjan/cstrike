@@ -3,6 +3,9 @@
 #include < hamsandwich >
 #include < xs >
 
+const Float:SLOWDOWN_PLAYER = 1300.0
+const Float:FORWARD_DISTANCE_MUL = 5.0
+
 enum _:VarList
 {
 	Float:flOrigin[ 3 ],
@@ -86,7 +89,7 @@ public forward_Player_Jump( id )
 	{
 		global_get( glb_v_forward, eVar[ flForward ] )
 		
-		xs_vec_mul_scalar( eVar[ flForward ], 5.0, eVar[ flForward ] )
+		xs_vec_mul_scalar( eVar[ flForward ], FORWARD_DISTANCE_MUL, eVar[ flForward ] )
 		xs_vec_add( eVar[ flOrigin ], eVar[ flForward ], eVar[ flTraceStart ] )
 		
 		eVar[ flTraceStart ][ 2 ] = _:( eVar[ flEndPosition ][ 2 ] + 18.0 )
@@ -96,7 +99,7 @@ public forward_Player_Jump( id )
 		get_tr2( eVar[ pLedgeTrace ], TR_flFraction, eVar[ flFraction ] )
 		get_tr2( eVar[ pLedgeTrace ], TR_vecEndPos, eVar[ flEndPosition ] )
 	
-		xs_vec_mul_scalar( eVar[ flPlaneNormal ], 5.0, eVar[ flPlaneNormal ] )
+		xs_vec_mul_scalar( eVar[ flPlaneNormal ], FORWARD_DISTANCE_MUL, eVar[ flPlaneNormal ] )
 		xs_vec_add( eVar[ flEndPosition ], eVar[ flPlaneNormal ], eVar[ flEndPosition ] )
 		
 		if ( 	!get_tr2( eVar[ pLedgeTrace ], TR_StartSolid )
@@ -112,7 +115,7 @@ public forward_Player_Jump( id )
 			
 			if ( eVar[ flFraction ] == 1.0 )
 			{
-				set_pev( id, pev_fuser2, 1300.0 )
+				set_pev( id, pev_fuser2, SLOWDOWN_PLAYER )
 				set_pev( id, pev_flags, eVar[ iFlags ] | FL_DUCKING )
 	
 				engfunc( EngFunc_SetSize, id, Float:{ -16.0, -16.0, -18.0 }, Float:{ 16.0, 16.0, 18.0 } )

@@ -74,8 +74,6 @@ public plugin_init()
 		RegisterHam( Ham_Weapon_PlayEmptySound,  szAutoWeapons[ i ], "forward_WeaponPlayEmptySound" )
 	}
 	
-	
-	
 	RegisterHam( Ham_Item_Deploy, "weapon_knife", "forward_KnifeDeploy_Post", .Post = 1 )
 	
 	RegisterHam( Ham_TakeDamage, "player", "forward_TakeDamage" )
@@ -100,6 +98,7 @@ public plugin_init()
 
 	g_iMsgId_CurWeapon = get_user_msgid( "CurWeapon" )
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
+
 }
 
 public plugin_precache()
@@ -109,6 +108,11 @@ public plugin_precache()
 
 public forward_Spawn( iEnt )
 {
+	if ( !pev_valid( iEnt ) )
+	{
+		return FMRES_IGNORED
+	}
+	
 	static szClassname[ 32 ]
 	
 	pev( iEnt, pev_classname, szClassname, charsmax( szClassname ) )
@@ -183,13 +187,15 @@ public register_bots( id )
 
 public forward_TakeDamage( id, iInflictor, iAttacker, Float:flDamage )
 {
-	if ( is_user_alive( iAttacker ) && get_user_weapon( iAttacker ) == CSW_KNIFE )
+	if ( !is_user_alive( iAttacker ) )
 	{
-		if ( flDamage >= 65.0 )
-		{
-			SetHamParamFloat( 4, 195.0 )
-		}
-		
+		return HAM_IGNORED
+	}
+	
+	if ( get_user_weapon( iAttacker ) == CSW_KNIFE  && flDamage >= 65.0 )
+	{
+		SetHamParamFloat( 4, 195.0 )
+
 		return HAM_HANDLED
 	}
 	return HAM_IGNORED
@@ -408,6 +414,3 @@ public event_SetFOV( id )
 {
 	g_bInZoom[ id ] = ( 0 < read_data( 1 ) < 55 )
 }
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
