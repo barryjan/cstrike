@@ -132,7 +132,7 @@ public forward_ItemAttachToPlayer( iEnt, id )
 public forward_ItemPostFrame( iEnt )
 {
 	static id; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
-	static iBpAmmo; iBpAmmo = get_pdata_int( id, 381, 4 )
+	static iBpAmmo; iBpAmmo = get_pdata_int( id, 381, 5 )
 	static iClip; iClip = get_pdata_int( iEnt, m_iClip, 4 )
 	static iButton; iButton = pev( id, pev_button )
 

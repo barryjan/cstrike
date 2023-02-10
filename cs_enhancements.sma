@@ -17,7 +17,7 @@
 #define MAX_PLAYERS 		32
 #define m_iUserPrefs 		510
 #define USERPREFS_HAS_SHIELD 	(1<<24)
-#define FIRE_RATE_GLOCK 	0.0545
+#define FIRE_RATE_GLOCK 	0.08 //0.0545
 #define MAX_INACCURACY 		1
 
 new g_iMsgId_CurWeapon
@@ -217,8 +217,8 @@ public forward_TraceAttack( id, iAttacker, Float:flDamage, Float:flDirection[ 3 
 
 		if ( flArmor > 0.0 )
 		{
-			
 			#define HIT_SHIELD 8 
+			
 			set_tr2( pTrace, TR_iHitgroup, HIT_SHIELD )
 			set_pev( id, pev_armorvalue, floatmax( 0.0, flArmor ) )
 			//SetHamParamFloat( 3, 0.0 )
@@ -290,6 +290,33 @@ public forward_PrimaryAttack_Post( iEnt )
 	{
 		set_pdata_int( iEnt, m_iShotFired, 0, 4 )
 	}
+	
+	switch ( get_pdata_int( iEnt, m_iId, 4 ) )
+	{
+		case CSW_MP5NAVY: server_print("%f", get_pdata_float( iEnt, m_flNextPrimaryAttack, 4 ))
+		case CSW_UMP45:
+		{
+			set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.08, 4 )
+		}
+		case CSW_M249: 
+		{
+			set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.087, 4 )
+			
+			const OFFSET_PARA_AMMO = 379
+			
+			static id; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
+			static iBpAmmo; iBpAmmo = get_pdata_int( id, OFFSET_PARA_AMMO, 5 )
+			static iClip; iClip = get_pdata_int( iEnt, m_iClip, 4 )
+			
+			if ( iBpAmmo )
+			{
+				static j; j = min( 100 - iClip, iBpAmmo )
+			
+				set_pdata_int( iEnt, m_iClip, iClip + j, 4 )
+				set_pdata_int( id, OFFSET_PARA_AMMO, iBpAmmo - j, 5 )
+			}
+		}
+	}
 }
 
 public forward_FamasPostFrame_Post( iEnt ) 
@@ -313,6 +340,11 @@ public forward_AutoPrimaryAttack_Post( iEnt )
 		flPunchAngle[ 0 ] *= 0.65
 		
 		set_pev( get_pdata_cbase( iEnt, m_pPlayer, 4 ), pev_punchangle, flPunchAngle )
+	}
+	
+	if ( get_pdata_int( iEnt, m_iId, 4 ) == CSW_FIVESEVEN )
+	{
+		set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.1, 4 )
 	}
 	
 	set_pdata_int( iEnt, m_iShotFired, 0, 4 )
