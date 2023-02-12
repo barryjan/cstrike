@@ -20,14 +20,15 @@
 #define FIRE_RATE_GLOCK 	0.08 //0.0545
 #define MAX_INACCURACY 		1
 
-new g_iMsgId_CurWeapon
-new g_iMsgId_TextMsg
 new g_iOldClip
 new g_iResetDuckFlag
 new g_iResetZoom
 new g_bInZoom[ MAX_PLAYERS + 1 ]
 new g_iForward_Spawn
 new g_iRegisteredCZBots
+new g_iMsgId_CurWeapon
+new g_iMsgId_TextMsg
+new g_iMsgId_SendAudio
 
 public plugin_init() 
 {
@@ -98,7 +99,6 @@ public plugin_init()
 
 	g_iMsgId_CurWeapon = get_user_msgid( "CurWeapon" )
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
-
 }
 
 public plugin_precache()
@@ -293,7 +293,6 @@ public forward_PrimaryAttack_Post( iEnt )
 	
 	switch ( get_pdata_int( iEnt, m_iId, 4 ) )
 	{
-		case CSW_MP5NAVY: server_print("%f", get_pdata_float( iEnt, m_flNextPrimaryAttack, 4 ))
 		case CSW_UMP45:
 		{
 			set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.08, 4 )
@@ -344,7 +343,7 @@ public forward_AutoPrimaryAttack_Post( iEnt )
 	
 	if ( get_pdata_int( iEnt, m_iId, 4 ) == CSW_FIVESEVEN )
 	{
-		set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.1, 4 )
+		set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.081, 4 )
 	}
 	
 	set_pdata_int( iEnt, m_iShotFired, 0, 4 )

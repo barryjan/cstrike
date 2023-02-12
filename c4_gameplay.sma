@@ -91,14 +91,6 @@ public forward_Touch( iEnt, id )
 			if ( ( iC4 = engfunc( EngFunc_FindEntityByString, -1, "model", "models/w_c4.mdl" ) ) > 0 )
 			{
 				set_pev( iC4, pev_iuser1, 1 )
-				
-				/*cs_set_c4_defusing( iC4, true )
-				set_pdata_float( iC4, m_flDefuseCountDown, 0.0, 5 )
-				
-				set_pdata_bool( id, m_bStartDefuse, true, 5 )
-				set_pdata_bool( id, m_bBombDefusing, true, 5)
-				
-				force_use( iC4, id )*/
 			}
 			
 		}
@@ -108,14 +100,16 @@ public forward_Touch( iEnt, id )
 
 public forward_Use( iEnt, id )
 {
-	if ( pev( iEnt, pev_iuser1 ) )
+	if ( pev( iEnt, pev_iuser1 ) && cs_get_user_defuse( id ) )
 	{
-		message_begin( MSG_ONE_UNRELIABLE, g_iMsgId_BarTime2, _, id )
-		write_short( 1 )
-		write_short( 90 )
-		message_end() 
+		const Float:flDefuseTime = 1.0
 		
-		set_pdata_float( iEnt, m_flDefuseCountDown, 1.0, 5 )
+		message_begin( MSG_ONE_UNRELIABLE, g_iMsgId_BarTime2, _, id )
+		write_short( floatround( flDefuseTime ) )
+		write_short( 90 )
+		message_end()
+
+		set_pdata_float( iEnt, m_flDefuseCountDown, flDefuseTime, 5 )
 	}
 }
 
