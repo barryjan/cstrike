@@ -59,7 +59,8 @@ public plugin_init()
 		RegisterHam( Ham_Weapon_PrimaryAttack,	szSniperWeapons[ i ], "forward_SnprPrimaryAttack_Post", .Post = 1 )
 	}
 
-	new const szAccurateWeapons[][] = { "weapon_m249", "weapon_sg550", "weapon_mp5navy", 
+	new const szAccurateWeapons[][] = { "weapon_m249", "weapon_sg550", "weapon_g3sg1",
+					    "weapon_galil", "weapon_famas", "weapon_mp5navy", 
 					    "weapon_p90", "weapon_mac10", "weapon_tmp", "weapon_ump45" }
 
 	for ( new i = 0; i < sizeof ( szAccurateWeapons ); i++ )
@@ -79,9 +80,10 @@ public plugin_init()
 	
 	RegisterHam( Ham_TakeDamage, "player", "forward_TakeDamage" )
 	RegisterHam( Ham_TraceAttack, "player", "forward_TraceAttack" )
- 
+	
 	register_event( "CurWeapon", "event_CurWeapon", "be", "1=1" )
 	register_event( "SetFOV", "event_SetFOV", "be" )
+	//register_event( "SendAudio", "event_SendAudio", "a", "1=0", "2=%!MRAD_BOMBDEF" )
 
 	if ( g_iForward_Spawn )
 	{
@@ -99,6 +101,7 @@ public plugin_init()
 
 	g_iMsgId_CurWeapon = get_user_msgid( "CurWeapon" )
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
+	g_iMsgId_SendAudio = get_user_msgid( "SendAudio" )
 }
 
 public plugin_precache()
@@ -444,4 +447,12 @@ public event_CurWeapon( id )
 public event_SetFOV( id )
 {
 	g_bInZoom[ id ] = ( 0 < read_data( 1 ) < 55 )
+}
+
+public event_SendAudio()
+{
+	if ( get_msg_block( g_iMsgId_SendAudio ) == BLOCK_NOT )
+	{
+		set_msg_block( g_iMsgId_SendAudio, BLOCK_ONCE )
+	}
 }
