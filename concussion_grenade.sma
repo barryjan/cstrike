@@ -13,17 +13,17 @@
 				4. Install compiled plugin, details: wiki.amxmodx.org/index.php/Configuring_AMX_Mod_X#Installing
 #endif
 
-#define MAX_PLAYERS 32
-#define MAX_ENTSARRAY_SIZE 64
-#define MAX_FILELEN 256
-#define m_iUserPrefs 510
-#define USERPREFS_HAS_SHIELD (1<<24)
-#define IsValidPrivateData(%1)	( pev_valid( %1 ) == 2 )
-#define IsPlayer(%1) ( 1 <= %1 <= g_iMaxPlayers )
-#define IsConcGrenade(%1) ( pev( %1, pev_iuser2 ) == 1 )
-#define SetConcGrenade(%1) set_pev( %1, pev_iuser2, 1 )
-#define SetStunTime(%1,%2) set_pev( %1, pev_fuser3, %2 )
-#define GetStunTime(%1) pev( %1, pev_fuser3 )
+#define MAX_PLAYERS 		32
+#define MAX_ENTSARRAY_SIZE 	64
+#define MAX_FILELEN 		256
+#define USERPREFS_HAS_SHIELD 	(1<<24)
+#define m_iUserPrefs 		510
+#define IsValidPrivateData(%1) 	( pev_valid( %1 ) == 2 )
+#define IsPlayer(%1) 		( 1 <= %1 <= g_iMaxPlayers )
+#define IsConcGrenade(%1) 	( pev( %1, pev_iuser2 ) == 1 )
+#define SetConcGrenade(%1) 	set_pev( %1, pev_iuser2, 1 )
+#define SetStunTime(%1,%2) 	set_pev( %1, pev_fuser3, %2 )
+#define GetStunTime(%1) 	pev( %1, pev_fuser3 )
 
 enum _:GrenadeData
 {
@@ -203,7 +203,7 @@ public forward_FindEntityInSphere( iStartEnt, Float:flOrigin[ 3 ], Float:flRadiu
 			return FMRES_IGNORED
 		}
 
-		static const Float:CONC_RADIUS = 1000.0
+		const Float:CONC_RADIUS = 1000.0
 		
 		while ( IsPlayer( ( id = engfunc( EngFunc_FindEntityInSphere, id, flOrigin, CONC_RADIUS ) ) > 0 ) )
 		{ 
@@ -261,7 +261,9 @@ public forward_PlayerPreThink( id )
 	
 	if ( GetStunTime( id ) > get_gametime() )
 	{
-		set_pev( id, pev_fuser2, 1315.789428 )
+		const Float:SLOWDOWN_SHOCK = 1315.789428
+
+		set_pev( id, pev_fuser2, SLOWDOWN_SHOCK )
 	}
 	else
 	{
@@ -313,9 +315,8 @@ public message_ScreenFade( iMsgID, iDest, iPlayer )
 		return PLUGIN_CONTINUE
 	}
 	
-	new iCurrentFlashbang = g_eConcGrenadeEntData[ GrenadeEnt ]
-	
-	if ( IsConcGrenade( iCurrentFlashbang ) && g_eConcGrenadeEntData[ ExplodeTime ] == get_gametime() )
+	if ( g_eConcGrenadeEntData[ ExplodeTime ] == get_gametime() 
+	&& IsConcGrenade( g_eConcGrenadeEntData[ GrenadeEnt ] ) )
 	{
 		static const COLOR[] = { 200, 200, 200 }
 		const Float:DURATION_MODIFIER = 0.7
