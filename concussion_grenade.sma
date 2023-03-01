@@ -65,7 +65,6 @@ public plugin_init()
 	)
 	
 	RegisterHam( Ham_Think, "grenade", "forward_Think" )
-	RegisterHam( Ham_Touch, "grenade", "forward_Touch_Post", .Post = 1 )
 	RegisterHam( Ham_Item_Deploy, "weapon_flashbang", "forward_Item_Deploy_Post", .Post = 1 )
 	RegisterHam( Ham_Weapon_SecondaryAttack, "weapon_flashbang", "forward_SecondaryAttack" )
 	
@@ -126,22 +125,6 @@ public forward_Think( iEnt )
 			g_eConcGrenadeEntData[ GrenadeEnt ] = iEnt
 			g_eConcGrenadeEntData[ ExplodeTime ] = _:flGameTime
 		}
-	}
-	return HAM_IGNORED
-}
-
-public forward_Touch_Post( iEnt, id )
-{
-	if ( !IsValidPrivateData( iEnt ) || get_pdata_bool( iEnt, m_bIsC4 ) 
-	|| get_pdata_short( iEnt, m_usEvent_Grenade ) || !IsConcGrenade( iEnt ) )
-	{
-	 	return HAM_IGNORED
-	}
-	
-	if ( ( pev( iEnt, pev_flags ) & ( FL_ONGROUND | FL_PARTIALGROUND | FL_CONVEYOR ) ) )
-	{
-		set_pev( iEnt, pev_dmgtime, get_gametime() )
-		set_pev( iEnt, pev_nextthink, get_gametime() )
 	}
 	return HAM_IGNORED
 }
@@ -245,8 +228,9 @@ public forward_SetModel_Post( iEnt, const szModel[] )
 	if ( g_bPlayerConcMode[ pev( iEnt, pev_owner ) ] )
 	{
 		SetConcGrenade( iEnt )	
+		set_pev( iEnt, pev_dmgtime, get_gametime() + 10.0 )
 		engfunc( EngFunc_SetModel, iEnt, g_eConcGrenadeFiles[ wModel ] )
-		
+				
 		return FMRES_SUPERCEDE
 	}
 	return FMRES_IGNORED
@@ -286,11 +270,33 @@ public forward_EmitSound( iEnt, iChannel, const szSample[], Float:flVolume, Floa
 		return FMRES_IGNORED
 	}
 	
-	if ( contain( szSample, "flashbang" ) != -1  )
+	static Float:flOrigin[ 3 ]
+	
+	pev( iEnt, pev_origin, flOrigin )
+	
+	if ( contain( szSample, "grenade_hit" ) != -1 )
 	{
-		static Float:flOrigin[ 3 ], iOrigin[ 3 ]
+		static pTrace, Float:flTraceEnd[ 3 ], Float:flPlaneNormal[ 3 ], Float:flFraction
 		
-		pev( iEnt, pev_origin, flOrigin )
+		xs_vec_copy( flOrigin, flTraceEnd )
+		flTraceEnd[ 2 ] -= 10.0
+
+		engfunc( EngFunc_TraceLine, flOrigin, flTraceEnd, DONT_IGNORE_MONSTERS, iEnt, pTrace )
+		
+		get_tr2( pTrace, TR_flFraction, flFraction )
+		get_tr2( pTrace, TR_vecPlaneNormal, flPlaneNormal )
+		free_tr2( pTrace )
+		
+		if ( flFraction < 1.0 && flPlaneNormal[ 2 ] > 0.7 )
+		{
+			set_pev( iEnt, pev_dmgtime, get_gametime() )
+			set_pev( iEnt, pev_nextthink, get_gametime() )
+		}
+	}
+	else if ( contain( szSample, "flashbang" ) != -1  )
+	{
+		static iOrigin[ 3 ]
+		
 		FVecIVec( flOrigin, iOrigin )
 
 		message_begin( MSG_BROADCAST, SVC_TEMPENTITY )
