@@ -20,8 +20,8 @@
 #define m_iUserPrefs 		510
 #define IsValidPrivateData(%1) 	( pev_valid( %1 ) == 2 )
 #define IsPlayer(%1) 		( 1 <= %1 <= g_iMaxPlayers )
-#define IsConcGrenade(%1) 	( pev( %1, pev_iuser2 ) == 1 )
-#define SetConcGrenade(%1) 	set_pev( %1, pev_iuser2, 1 )
+#define IsConcGrenade(%1) 	( pev( %1, pev_iuser2 ) == 324665 )
+#define SetConcGrenade(%1) 	set_pev( %1, pev_iuser2, 324665 )
 #define SetStunTime(%1,%2) 	set_pev( %1, pev_fuser3, %2 )
 #define GetStunTime(%1) 	pev( %1, pev_fuser3 )
 
@@ -186,7 +186,7 @@ public forward_FindEntityInSphere( iStartEnt, Float:flOrigin[ 3 ], Float:flRadiu
 			return FMRES_IGNORED
 		}
 
-		const Float:CONC_RADIUS = 1000.0
+		const Float:CONC_RADIUS = 800.0
 		
 		while ( IsPlayer( ( id = engfunc( EngFunc_FindEntityInSphere, id, flOrigin, CONC_RADIUS ) ) > 0 ) )
 		{ 
@@ -279,7 +279,7 @@ public forward_EmitSound( iEnt, iChannel, const szSample[], Float:flVolume, Floa
 		static pTrace, Float:flTraceEnd[ 3 ], Float:flPlaneNormal[ 3 ], Float:flFraction
 		
 		xs_vec_copy( flOrigin, flTraceEnd )
-		flTraceEnd[ 2 ] -= 10.0
+		flTraceEnd[ 2 ] -= 2.0
 
 		engfunc( EngFunc_TraceLine, flOrigin, flTraceEnd, DONT_IGNORE_MONSTERS, iEnt, pTrace )
 		
