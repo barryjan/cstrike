@@ -101,7 +101,7 @@ public forward_Touch( iEnt, id )
 
 public forward_EmitSound( iEnt, iChannel, const szSample[], Float:flVolume, Float:flAttn, iFlags, iPitch )
 {
-	if ( szSample[ 0 ] != 'w' || !pev_valid( iEnt ) )
+	if ( szSample[ 0 ] != 'w' || !IsCSGrenade( iEnt ) )
 	{
 		return FMRES_IGNORED
 	}
@@ -166,7 +166,7 @@ public forward_EmitSound( iEnt, iChannel, const szSample[], Float:flVolume, Floa
 			engfunc( EngFunc_SetOrigin, iSmokeEnt, flOrigin )
 
 			set_pev( iSmokeEnt, pev_spawnflags, SF_TRIGGER_HURT_NO_CLIENTS )
-			set_pev( iSmokeEnt, pev_nextthink, flDuration + get_gametime() )
+			set_pev( iSmokeEnt, pev_nextthink, get_gametime() + flDuration )
 
 			SetCSGrenade( iSmokeEnt )
 			

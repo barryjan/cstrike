@@ -16,7 +16,7 @@
 #define MAX_PLAYERS 		32
 #define MAX_ENTSARRAY_SIZE 	64
 #define MAX_FILELEN 		256
-#define USERPREFS_HAS_SHIELD 	(1<<24)
+#define USERPREFS_HAS_SHIELD 	( 1<<24 )
 #define m_iUserPrefs 		510
 #define IsValidPrivateData(%1) 	( pev_valid( %1 ) == 2 )
 #define IsPlayer(%1) 		( 1 <= %1 <= g_iMaxPlayers )
@@ -186,7 +186,7 @@ public forward_FindEntityInSphere( iStartEnt, Float:flOrigin[ 3 ], Float:flRadiu
 			return FMRES_IGNORED
 		}
 
-		const Float:CONC_RADIUS = 800.0
+		const Float:CONC_RADIUS = 700.0
 		
 		while ( IsPlayer( ( id = engfunc( EngFunc_FindEntityInSphere, id, flOrigin, CONC_RADIUS ) ) > 0 ) )
 		{ 
@@ -218,16 +218,13 @@ public forward_SetModel_Post( iEnt, const szModel[] )
 	}
 	
 	static Float:flGravity
+	
 	pev( iEnt, pev_gravity, flGravity )
 	
-	if ( flGravity == 0.0 )
-	{
-		return FMRES_IGNORED
-	}
-
-	if ( g_bPlayerConcMode[ pev( iEnt, pev_owner ) ] )
+	if ( flGravity > 0.0 && g_bPlayerConcMode[ pev( iEnt, pev_owner ) ] )
 	{
 		SetConcGrenade( iEnt )	
+		
 		set_pev( iEnt, pev_dmgtime, get_gametime() + 10.0 )
 		engfunc( EngFunc_SetModel, iEnt, g_eConcGrenadeFiles[ wModel ] )
 				
