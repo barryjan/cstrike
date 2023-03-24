@@ -49,7 +49,8 @@ public plugin_init()
 	RegisterHam( Ham_Item_Deploy, 		"weapon_glock18", "forward_GlockDeploy_Post", .Post = 1 )
 	RegisterHam( Ham_Item_PostFrame, 	"weapon_glock18", "forward_GlockPostFrame" )
 	
-	RegisterHam( Ham_Item_PostFrame, 	"weapon_famas",	  "forward_FamasPostFrame_Post", .Post = 1 )
+	RegisterHam( Ham_Item_PostFrame, 	"weapon_famas", "forward_FamasPostFrame_Post", .Post = 1 )
+	RegisterHam( Ham_Weapon_Reload, 	"weapon_famas", "forward_FamasWeaponReload_Post", .Post = 1 )
 	
 	new const szSniperWeapons[][] = { "weapon_sg550", "weapon_g3sg1", "weapon_scout" }
 	
@@ -60,8 +61,9 @@ public plugin_init()
 	}
 
 	new const szAccurateWeapons[][] = { "weapon_m249", "weapon_sg550", "weapon_g3sg1",
-					    "weapon_galil", "weapon_famas", "weapon_mp5navy", 
-					    "weapon_p90", "weapon_mac10", "weapon_tmp", "weapon_ump45" }
+					    "weapon_galil", "weapon_famas", "weapon_sg552",
+					    "weapon_aug", "weapon_mp5navy", "weapon_p90", 
+					    "weapon_mac10", "weapon_tmp", "weapon_ump45" }
 
 	for ( new i = 0; i < sizeof ( szAccurateWeapons ); i++ )
 	{				
@@ -102,6 +104,18 @@ public plugin_init()
 	g_iMsgId_CurWeapon = get_user_msgid( "CurWeapon" )
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
 	g_iMsgId_SendAudio = get_user_msgid( "SendAudio" )
+}
+
+public forward_FamasWeaponReload_Post( iEnt )
+{ 
+	static id ; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
+	
+	if ( get_pdata_int(iEnt, m_fInReload, 4 ) )
+	{
+		set_pdata_float( id, m_flNextAttack, 3.0, 5 )
+		set_pdata_float( iEnt, m_flTimeWeaponIdle, 3.0, 4 )
+		//set_pev( id, pev_frame, 200.0 )
+	}
 }
 
 public plugin_precache()
@@ -271,11 +285,14 @@ public forward_SnprPrimaryAttack_Post( iEnt )
 	{
 		set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.95, 4 )
 	}
+	
+	set_pdata_int( iEnt, m_iShotFired, 0, 4 )
+	set_pdata_float( iEnt, m_flDecreaseShotsFired, 0.0, 4 )
 }
 
 public forward_WeaponPlayEmptySound( iEnt )
 {
-	new iSecWeapon
+	static iSecWeapon
 	
 	if ( ( iSecWeapon = get_pdata_cbase( get_pdata_cbase( iEnt, m_pPlayer, 4 ), m_rgpPlayerItems_CBasePlayer[ 2 ] ) ) > 0 )
 	{
@@ -289,12 +306,24 @@ public forward_WeaponPlayEmptySound( iEnt )
 
 public forward_PrimaryAttack_Post( iEnt )
 {
+	static id; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
+	static iWeaponId; iWeaponId = get_pdata_int( iEnt, m_iId, 4 )
+
 	if ( get_pdata_int( iEnt, m_iShotFired, 4 ) > MAX_INACCURACY )
 	{
+		if ( iWeaponId == CSW_AUG || iWeaponId == CSW_SG552 )
+		{
+			if ( get_pdata_int( id, m_iFOV, 5 ) == 90 )
+			{
+				return HAM_IGNORED
+			}
+		}
+		
 		set_pdata_int( iEnt, m_iShotFired, 0, 4 )
+		set_pdata_float( iEnt, m_flDecreaseShotsFired, 0.0, 4 )
 	}
 	
-	switch ( get_pdata_int( iEnt, m_iId, 4 ) )
+	switch ( iWeaponId )
 	{
 		case CSW_UMP45:
 		{
@@ -305,8 +334,7 @@ public forward_PrimaryAttack_Post( iEnt )
 			set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.087, 4 )
 			
 			const OFFSET_PARA_AMMO = 379
-			
-			static id; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
+
 			static iBpAmmo; iBpAmmo = get_pdata_int( id, OFFSET_PARA_AMMO, 5 )
 			static iClip; iClip = get_pdata_int( iEnt, m_iClip, 4 )
 			
@@ -318,7 +346,12 @@ public forward_PrimaryAttack_Post( iEnt )
 				set_pdata_int( id, OFFSET_PARA_AMMO, iBpAmmo - j, 5 )
 			}
 		}
+		case CSW_AUG,CSW_SG552:
+		{
+			set_pdata_float( iEnt, m_flAccuracy, 0.0, 4 )
+		}
 	}
+	return HAM_IGNORED
 }
 
 public forward_FamasPostFrame_Post( iEnt ) 
