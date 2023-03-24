@@ -48,6 +48,7 @@ public plugin_init()
 	
 	register_forward( FM_PlaybackEvent, "forward_PlaybackEvent" )
 	register_forward( FM_EmitSound, "forward_EmitSound" )
+	register_forward( FM_SetModel, "forward_SetModel_Post", ._post = 1 )
 	
 	RegisterHam( Ham_Touch, "trigger_hurt", "forward_Touch" )
 	RegisterHam( Ham_Think, "trigger_hurt", "forward_Think" )
@@ -76,26 +77,11 @@ public event_NewRound()
 	}
 }
 
-public forward_Touch( iEnt, id )
+public forward_SetModel_Post( iEnt, const szModel[] )
 {
-	if ( IsValidPrivateData( iEnt ) && IsCSGrenade( iEnt ) && IsPlayer( id ) )
+	if ( IsValidPrivateData( iEnt ) && contain( szModel, "smokegrenade" ) )
 	{
-		const Float:flSlowdownSpeed = 1315.789428
-
-		static Float:flGametime
-		static Float:flDelay
-
-		flGametime = get_gametime()
-		pev( id, pev_fuser3, flDelay )
-		
-		set_pev( id, pev_fuser2, flSlowdownSpeed )
-	
-		if ( flDelay < flGametime )
-		{
-			emit_sound( id, CHAN_VOICE, g_szCoughSounds[ random( charsmax( g_szCoughSounds ) ) ], 1.0, ATTN_NORM, 0, PITCH_NORM )
-			
-			set_pev( id, pev_fuser3, flGametime + 1.0 )
-		}
+		SetCSGrenade( iEnt )
 	}
 }
 
@@ -153,7 +139,7 @@ public forward_EmitSound( iEnt, iChannel, const szSample[], Float:flVolume, Floa
 		
 		new iSmokeEnt = engfunc( EngFunc_CreateNamedEntity , engfunc( EngFunc_AllocString, "trigger_hurt" ) )
 		
-		if (iSmokeEnt )
+		if ( iSmokeEnt )
 		{
 			static Float:flMins[ 3 ], Float:flMaxs[ 3 ]
 			
@@ -167,9 +153,6 @@ public forward_EmitSound( iEnt, iChannel, const szSample[], Float:flVolume, Floa
 
 			set_pev( iSmokeEnt, pev_spawnflags, SF_TRIGGER_HURT_NO_CLIENTS )
 			set_pev( iSmokeEnt, pev_nextthink, get_gametime() + flDuration )
-
-			SetCSGrenade( iSmokeEnt )
-			
 			set_pev( iEnt, pev_effects, EF_NODRAW ) 
 		}
 	}
@@ -190,5 +173,28 @@ public forward_Think( iEnt )
 	if ( IsCSGrenade( iEnt ) )
 	{
 		engfunc( EngFunc_RemoveEntity, iEnt )
+	}
+}
+
+public forward_Touch( iEnt, id )
+{
+	if ( IsValidPrivateData( iEnt ) && IsCSGrenade( iEnt ) && IsPlayer( id ) )
+	{
+		const Float:flSlowdownSpeed = 1315.789428
+
+		static Float:flGametime
+		static Float:flDelay
+
+		flGametime = get_gametime()
+		pev( id, pev_fuser3, flDelay )
+		
+		set_pev( id, pev_fuser2, flSlowdownSpeed )
+	
+		if ( flDelay < flGametime )
+		{
+			emit_sound( id, CHAN_VOICE, g_szCoughSounds[ random( charsmax( g_szCoughSounds ) ) ], 1.0, ATTN_NORM, 0, PITCH_NORM )
+			
+			set_pev( id, pev_fuser3, flGametime + 1.0 )
+		}
 	}
 }
