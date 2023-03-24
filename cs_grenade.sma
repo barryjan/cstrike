@@ -79,7 +79,7 @@ public event_NewRound()
 
 public forward_SetModel_Post( iEnt, const szModel[] )
 {
-	if ( IsValidPrivateData( iEnt ) && contain( szModel, "smokegrenade" ) )
+	if ( IsValidPrivateData( iEnt ) && contain( szModel, "smokegrenade" ) != -1 )
 	{
 		SetCSGrenade( iEnt )
 	}
