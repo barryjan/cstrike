@@ -112,14 +112,14 @@ public forward_EmitSound( iEnt, iChannel, const szSample[], Float:flVolume, Floa
 		if ( flFraction < 1.0 && flPlaneNormal[ 2 ] > 0.7 )
 		{
 			set_pev( iEnt, pev_flags, FL_ONGROUND )
-			set_pev( iEnt, pev_dmgtime, get_gametime() )
-			set_pev( iEnt, pev_nextthink, get_gametime() )
+			set_pev( iEnt, pev_dmgtime, get_gametime() + 0.07 )
+			set_pev( iEnt, pev_nextthink, get_gametime() + 0.07 )
 		}
 	}
 	else if ( contain( szSample, "sg_explode" ) != -1 )
 	{
-		const Float:flGasRadius = 100.0
-		const Float:flDuration = 7.0
+		const Float:flGasRadius = 120.0
+		const Float:flDuration = 9.0
 		
 		static iOrigin[ 3 ]
 
@@ -132,7 +132,7 @@ public forward_EmitSound( iEnt, iChannel, const szSample[], Float:flVolume, Floa
 		write_coord( iOrigin[ 2 ] + 50 )			// origin.z
 		write_short( floatround( flGasRadius ) ) 	// radius
 		write_short( g_iSmokeSprite ) 			// modelindex
-		write_byte( 100 ) 				// count
+		write_byte( 80 ) 				// count
 		write_byte( TEFIRE_FLAG_ALPHA )			// flags
 		write_byte( floatround( flDuration ) * 10 )	// duration (in seconds) * 10
 		message_end()
@@ -147,13 +147,15 @@ public forward_EmitSound( iEnt, iChannel, const szSample[], Float:flVolume, Floa
 			
 			xs_vec_set( flMins, -flGasRadius, -flGasRadius, -flGasRadius )
 			xs_vec_set( flMaxs, flGasRadius, flGasRadius, flGasRadius )
-			
-			engfunc( EngFunc_SetSize , iSmokeEnt , flMins , flMaxs )
+		
 			engfunc( EngFunc_SetOrigin, iSmokeEnt, flOrigin )
+			engfunc( EngFunc_SetSize , iSmokeEnt , flMins , flMaxs )
 
 			set_pev( iSmokeEnt, pev_spawnflags, SF_TRIGGER_HURT_NO_CLIENTS )
 			set_pev( iSmokeEnt, pev_nextthink, get_gametime() + flDuration )
 			set_pev( iEnt, pev_effects, EF_NODRAW ) 
+			
+			SetCSGrenade( iSmokeEnt )
 		}
 	}
 	return FMRES_IGNORED
@@ -194,7 +196,7 @@ public forward_Touch( iEnt, id )
 		{
 			emit_sound( id, CHAN_VOICE, g_szCoughSounds[ random( charsmax( g_szCoughSounds ) ) ], 1.0, ATTN_NORM, 0, PITCH_NORM )
 			
-			set_pev( id, pev_fuser3, flGametime + 1.0 )
+			set_pev( id, pev_fuser3, flGametime + 3.0 )
 		}
 	}
 }

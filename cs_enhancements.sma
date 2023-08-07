@@ -225,20 +225,30 @@ public forward_TraceAttack( id, iAttacker, Float:flDamage, Float:flDirection[ 3 
 		return HAM_IGNORED
 	}
 	
-	const bitsBodyArmor = ( 1 << HIT_CHEST | 1 << HIT_STOMACH )
+	const HIT_SHIELD = 8 
+	const bitsBodyArmor = ( 1 << HIT_HEAD | 1 << HIT_CHEST | 1 << HIT_STOMACH )
 	
-	if ( ( 1 << get_tr2( pTrace, TR_iHitgroup ) ) & bitsBodyArmor )
+	static iHitGroup; iHitGroup = get_tr2( pTrace, TR_iHitgroup )
+	static Float:flArmor; flArmor = float( pev( id, pev_armorvalue ) )
+	
+	if ( ( 1 << iHitGroup ) & bitsBodyArmor )
 	{
-		static Float:flArmor
-		flArmor = float( pev( id, pev_armorvalue ) ) - flDamage
-
+		if ( iHitGroup == HIT_HEAD && get_pdata_int( id, m_iKevlarType, 5 ) != _:CS_ARMOR_VESTHELM )
+		{
+			return HAM_IGNORED
+		}
+		
 		if ( flArmor > 0.0 )
 		{
-			#define HIT_SHIELD 8 
+			flArmor -= flDamage
 			
 			set_tr2( pTrace, TR_iHitgroup, HIT_SHIELD )
 			set_pev( id, pev_armorvalue, floatmax( 0.0, flArmor ) )
-			//SetHamParamFloat( 3, 0.0 )
+			
+			SetHamParamFloat( 3, 0.0 )
+			SetHamParamInteger( 6, DMG_CLUB )
+			
+			return HAM_HANDLED
 		}
 	}
 	return HAM_IGNORED
@@ -331,7 +341,7 @@ public forward_PrimaryAttack_Post( iEnt )
 		}
 		case CSW_M249: 
 		{
-			set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.087, 4 )
+			set_pdata_float( iEnt, m_flNextPrimaryAttack, 0.078, 4 )
 			
 			const OFFSET_PARA_AMMO = 379
 
