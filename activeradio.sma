@@ -50,7 +50,7 @@ static const g_szAudioList[][] =
 new g_iMsgId_SendAudio
 new g_iScoreTally[ 3 ]
 new Float:g_flBombDefuseTime
-new Float:g_flNewRoundTime
+new Float:g_flStartRoundTime
 new g_pCvar_c4timer
 
 public plugin_init() 
@@ -70,8 +70,9 @@ public plugin_init()
 	register_event( "TextMsg", "event_TextMsgReset", "a", 
 			"2=#Game_will_restart_in", 
 			"2=#Game_Commencing" )
-	
 	register_event( "HLTV", "event_NewRound", "a", "1=0", "2=0" )
+	
+	register_logevent( "logevent_RoundStart", 2, "1=Round_Start" ) 
 			
 	g_pCvar_c4timer = get_cvar_pointer( "mp_c4timer" )
 }
@@ -95,7 +96,12 @@ public event_NewRound()
 	
 	remove_task( TASKID_SENDAUDIO )
 
-	g_flNewRoundTime = get_gametime()
+	
+}
+
+public logevent_RoundStart()
+{
+	g_flStartRoundTime = get_gametime()
 }
 
 public event_TeamScore()
@@ -163,7 +169,7 @@ public message_SendAudio( iMsgID, iDest, iPlayer )
 		}
 		case MRAD_GO, MRAD_LETSGO, MRAD_LOCKNLOAD, MRAD_MOVEOUT: 
 		{
-			if ( iAudio == MRAD_GO && g_flNewRoundTime != get_gametime() )
+			if ( iAudio == MRAD_GO && g_flStartRoundTime != get_gametime() )
 			{
 				return PLUGIN_CONTINUE
 			}
