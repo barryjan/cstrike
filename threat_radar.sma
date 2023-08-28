@@ -32,13 +32,9 @@ new g_iMsgId_HostagePos
 new g_iMsgId_HostageK
 new g_iMsgId_SendAudio
 new g_iMaxPlayers
+new g_iChannel
 new Float:g_flEnemyDelay[ MAX_PLAYERS + 1 ]
 new Float:g_flAllyDelay[ MAX_PLAYERS + 1 ]
-
-public plugin_precache() 
-{
-	g_registerId_PrecacheEvent = register_forward( FM_PrecacheEvent, "forward_PrecacheEvent", ._post = 1 )
-}
 
 public plugin_init()
 {
@@ -66,6 +62,11 @@ public plugin_init()
 	g_iMaxPlayers = get_maxplayers()
 }
 
+public plugin_precache() 
+{
+	g_registerId_PrecacheEvent = register_forward( FM_PrecacheEvent, "forward_PrecacheEvent", ._post = 1 )
+}
+
 public forward_PrecacheEvent( iType , const szName[] ) 
 {
 	for ( new i = 0; i < sizeof( g_szGunsEvents ); i++ ) 
@@ -82,6 +83,11 @@ public forward_PrecacheEvent( iType , const szName[] )
 
 public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 {
+	if ( !get_pcvar_num( g_pCvar_TreatEnable ) )
+	{
+		return FMRES_IGNORED
+	}
+	
 	if ( !( g_bitGunEventIds & ( 1 << iEventId ) ) || !( 1 <= iInvoker <= g_iMaxPlayers ) )
 	{
 		return FMRES_IGNORED
@@ -106,11 +112,6 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 		}
 	}
 	
-	if ( !get_pcvar_num( g_pCvar_TreatEnable ) )
-	{
-		return FMRES_IGNORED
-	}
-
 	if ( !get_pcvar_num( g_pCvar_ShowSuppresedWeapon ) )
 	{
 		const bitSuppressedWeapons = ( 1 << CSW_M4A1 ) | ( 1 << CSW_USP ) | ( 1 << CSW_TMP )
@@ -150,6 +151,12 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 
 	get_user_origin( iInvoker, iVecOrigin[ 0 ] )
 
+	switch ( g_iChannel )
+	{
+		case 5..22: g_iChannel++ // max 23
+		default: g_iChannel = 5
+	}
+	
 	for ( new i = 0; i < iNum; i++ )
 	{
 		id = iPlayers[ i ]
@@ -160,19 +167,17 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 		{
 			continue
 		}
-		
-		const iHostageOffset = 4
-		
+
 		message_begin( MSG_ONE_UNRELIABLE, g_iMsgId_HostagePos, _, .player = id )
 		write_byte( 1 )	// Flag
-		write_byte( iInvoker + iHostageOffset ) // HostageID
+		write_byte( g_iChannel ) // HostageID
 		write_coord( iVecOrigin[ 0 ][ 0 ] ) // CoordX
-		write_coord( iVecOrigin[ 0 ][ 1 ] ) // CoordY
+ 		write_coord( iVecOrigin[ 0 ][ 1 ] ) // CoordY
 		write_coord( iVecOrigin[ 0 ][ 2 ] ) // CoordZ
 		message_end()
 		
 		message_begin( MSG_ONE_UNRELIABLE, g_iMsgId_HostageK, _, .player = id )
-		write_byte( iInvoker + iHostageOffset ) // HostageID
+		write_byte( g_iChannel ) // HostageID
 		message_end()
 	}
 	return FMRES_HANDLED
