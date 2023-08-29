@@ -144,22 +144,18 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 	 	return FMRES_IGNORED
 	}
 	
-	static iVecOrigin[ 2 ][ 3 ]
-	static iPlayers[ 32 ], iNum, id
-	static const szEnemyTeam[][] = { "", "CT", "TERRORIST" }
-
-	get_players( iPlayers, iNum, "aceh", szEnemyTeam[ get_user_team( iInvoker ) ] )
-
-	get_user_origin( iInvoker, iVecOrigin[ 0 ] )
-
 	const iMinChannel = 5
-	const iMaxChannel = 22 
+	const iMaxChannel = 23 // max 23
 	
-	switch ( g_iChannel )
-	{
-		case iMinChannel..iMaxChannel: g_iChannel++ // max 23
-		default: g_iChannel = iMinChannel
-	}
+	static iPlayers[ 32 ], iNum, id
+	static iVecOrigin[ 2 ][ 3 ]
+	static iMaxDistance
+	
+	iMaxDistance = get_pcvar_num( g_pCvar_MaxDistance )
+	g_iChannel = ( g_iChannel++ ) >= iMaxChannel ? iMinChannel : max( g_iChannel, iMinChannel )
+	
+	get_players( iPlayers, iNum, "aceh", get_user_team( iInvoker ) == 1 ? "CT" : "TERRORIST" )
+	get_user_origin( iInvoker, iVecOrigin[ 0 ] )
 	
 	for ( new i = 0; i < iNum; i++ )
 	{
@@ -167,7 +163,7 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 	
 		get_user_origin( id, iVecOrigin[ 1 ] )
 		
-		if ( get_distance( iVecOrigin[ 0 ], iVecOrigin[ 1 ] ) >= get_pcvar_num( g_pCvar_MaxDistance ) )
+		if ( get_distance( iVecOrigin[ 0 ], iVecOrigin[ 1 ] ) >= iMaxDistance )
 		{
 			continue
 		}
