@@ -152,13 +152,13 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 
 	get_user_origin( iInvoker, iVecOrigin[ 0 ] )
 
-	const iMinChannels = 5
-	const iMaxChannels = 22 
+	const iMinChannel = 5
+	const iMaxChannel = 22 
 	
 	switch ( g_iChannel )
 	{
-		case iMinChannels..iMaxChannels: g_iChannel++ // max 23
-		default: g_iChannel = iMaxChannels
+		case iMinChannel..iMaxChannel: g_iChannel++ // max 23
+		default: g_iChannel = iMinChannel
 	}
 	
 	for ( new i = 0; i < iNum; i++ )
