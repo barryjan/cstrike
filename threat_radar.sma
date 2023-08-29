@@ -23,7 +23,7 @@ new const g_iGunsWeaponId[] =
 
 new g_registerId_PrecacheEvent
 new g_bitGunEventIds
-new g_pCvar_TreatEnable
+new g_pCvar_Enable
 new g_pCvar_ShowTeam
 new g_pCvar_Delay
 new g_pCvar_MaxDistance
@@ -49,7 +49,7 @@ public plugin_init()
 	
 	register_forward( FM_PlaybackEvent , "forward_PlaybackEvent" )
 
-	g_pCvar_TreatEnable = register_cvar( "amx_treatradar", "1" )
+	g_pCvar_Enable = register_cvar( "amx_treatradar", "1" )
 	g_pCvar_ShowTeam = register_cvar( "amx_treatradar_showteam", "1" )
 	g_pCvar_Delay = register_cvar( "amx_treatradar_delay", "0.5" )
 	g_pCvar_MaxDistance = register_cvar( "amx_treatradar_maxdistance", "3500" )
@@ -83,7 +83,7 @@ public forward_PrecacheEvent( iType , const szName[] )
 
 public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 {
-	if ( !get_pcvar_num( g_pCvar_TreatEnable ) )
+	if ( !get_pcvar_num( g_pCvar_Enable ) )
 	{
 		return FMRES_IGNORED
 	}
@@ -152,10 +152,13 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 
 	get_user_origin( iInvoker, iVecOrigin[ 0 ] )
 
+	const iMinChannels = 5
+	const iMaxChannels = 22 
+	
 	switch ( g_iChannel )
 	{
-		case 5..22: g_iChannel++ // max 23
-		default: g_iChannel = 5
+		case iMinChannels..iMaxChannels: g_iChannel++ // max 23
+		default: g_iChannel = iMaxChannels
 	}
 	
 	for ( new i = 0; i < iNum; i++ )
