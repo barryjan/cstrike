@@ -27,14 +27,14 @@ new g_pCvar_Enable
 new g_pCvar_ShowTeam
 new g_pCvar_Delay
 new g_pCvar_MaxDistance
-new g_pCvar_ShowSuppressedWeapons
+new g_pCvar_ShowSuppressed
 new g_iMsgId_HostagePos
 new g_iMsgId_HostageK
 new g_iMsgId_SendAudio
 new g_iMaxPlayers
 new g_iChannel
 new Float:g_flEnemyDelay[ MAX_PLAYERS + 1 ]
-new Float:g_flAllyDelay[ MAX_PLAYERS + 1 ]
+new Float:g_flTeamDelay[ MAX_PLAYERS + 1 ]
 
 public plugin_init()
 {
@@ -53,7 +53,7 @@ public plugin_init()
 	g_pCvar_ShowTeam = register_cvar( "amx_treatradar_showteam", "1" )
 	g_pCvar_Delay = register_cvar( "amx_treatradar_delay", "0.5" )
 	g_pCvar_MaxDistance = register_cvar( "amx_treatradar_maxdistance", "3500" )
-	g_pCvar_ShowSuppressedWeapons = register_cvar( "amx_treatradar_showsuppressed", "0" )
+	g_pCvar_ShowSuppressed = register_cvar( "amx_treatradar_showsuppressed", "0" )
 
 	g_iMsgId_HostagePos = get_user_msgid( "HostagePos" )
 	g_iMsgId_HostageK = get_user_msgid( "HostageK" )
@@ -101,18 +101,18 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 	
 	if ( get_pcvar_num( g_pCvar_ShowTeam ) )
 	{
-		if ( flGameTime >= g_flAllyDelay[ iInvoker ] )
+		if ( flGameTime >= g_flTeamDelay[ iInvoker ] )
 		{
 			message_begin( MSG_BROADCAST, g_iMsgId_SendAudio )
 			write_byte( iInvoker )
 			write_string( "" )
 			message_end()
 			
-			g_flAllyDelay[ iInvoker ] = flGameTime + pCvar_Delay
+			g_flTeamDelay[ iInvoker ] = flGameTime + pCvar_Delay
 		}
 	}
 	
-	if ( !get_pcvar_num( g_pCvar_ShowSuppressedWeapons ) )
+	if ( !get_pcvar_num( g_pCvar_ShowSuppressed ) )
 	{
 		const bitSuppressedWeapons = ( 1 << CSW_M4A1 ) | ( 1 << CSW_USP ) | ( 1 << CSW_TMP )
 		
@@ -146,7 +146,6 @@ public forward_PlaybackEvent( bitFlags, iInvoker, iEventId )
 	
 	const iMinChannel = 5
 	const iMaxChannel = 23 // max 23
-	
 	static iPlayers[ 32 ], iNum, id
 	static iVecOrigin[ 2 ][ 3 ]
 	static iMaxDistance
