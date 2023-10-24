@@ -16,14 +16,18 @@
 
 #define MAX_PLAYERS 		32
 #define m_iUserPrefs 		510
+#define IsValidPrivateData(%1) 	( pev_valid( %1 ) == 2 )
 #define USERPREFS_HAS_SHIELD 	(1<<24)
 #define FIRE_RATE_GLOCK 	0.08 //0.0545
 #define MAX_INACCURACY 		1
+#define MAX_AMMONAMES		15
 
 new g_iOldClip
 new g_iResetDuckFlag
 new g_iResetZoom
 new g_bInZoom[ MAX_PLAYERS + 1 ]
+new g_iszAmmoNames[ MAX_AMMONAMES + 1 ]
+new g_iMaxPlayers
 new g_iForward_Spawn
 new g_iRegisteredCZBots
 new g_iMsgId_CurWeapon
@@ -82,11 +86,26 @@ public plugin_init()
 	
 	RegisterHam( Ham_TakeDamage, "player", "forward_TakeDamage" )
 	RegisterHam( Ham_TraceAttack, "player", "forward_TraceAttack" )
-	
+	RegisterHam( Ham_Killed, "player", "forward_Killed" )
+
 	register_event( "CurWeapon", "event_CurWeapon", "be", "1=1" )
 	register_event( "SetFOV", "event_SetFOV", "be" )
 	//register_event( "SendAudio", "event_SendAudio", "a", "1=0", "2=%!MRAD_BOMBDEF" )
+	
+	register_forward( FM_SetModel, "forward_SetModel_Post", ._post = 1 )
+	
+	new const szAmmoNames[][] = 
+	{
+		"", "338Magnum", "762Nato", "556NatoBox", "556Nato",
+		"buckshot", "45ACP", "57mm", "50AE", "357SIG",
+		"9mm", "Flashbang", "HEGrenade", "SmokeGrenade", "C4"
+	}
 
+	for ( new i = 1; i < sizeof ( szAmmoNames ); i++ )
+	{
+		g_iszAmmoNames[ i ] = engfunc( EngFunc_AllocString, szAmmoNames[ i ] )
+	}
+	
 	if ( g_iForward_Spawn )
 	{
 		unregister_forward( FM_Spawn, g_iForward_Spawn )
@@ -104,6 +123,88 @@ public plugin_init()
 	g_iMsgId_CurWeapon = get_user_msgid( "CurWeapon" )
 	g_iMsgId_TextMsg = get_user_msgid( "TextMsg" )
 	g_iMsgId_SendAudio = get_user_msgid( "SendAudio" )
+	
+	g_iMaxPlayers = get_maxplayers()
+}
+
+public forward_Killed( id )
+{
+	static iWeapons; iWeapons = pev( id, pev_weapons )
+	
+	if ( cs_get_user_hasprim( id ) )
+	{
+		if ( iWeapons & ( 1 << CSW_P228 ) )
+		{
+			engclient_cmd( id, "drop", "weapon_p228" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_ELITE ) )
+		{
+			engclient_cmd( id, "drop", "weapon_elite" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_FIVESEVEN ) )
+		{
+			engclient_cmd( id, "drop", "weapon_fiveseven" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_USP ) )
+		{
+			engclient_cmd( id, "drop", "weapon_usp" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_GLOCK18 ) )
+		{
+			engclient_cmd( id, "drop", "weapon_glock18" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_DEAGLE ) )
+		{
+			engclient_cmd( id, "drop", "weapon_deagle" )
+		}
+	}
+	return HAM_IGNORED
+}
+
+public forward_SetModel_Post( iEnt, const szModel[] )
+{
+	if ( equal( szModel[ 9 ], "weaponbox.mdl" ) || !IsValidPrivateData( iEnt ) )
+	{
+		return FMRES_IGNORED
+	}
+	
+	static szClassname[ 11 ]
+	pev( iEnt, pev_classname, szClassname, charsmax( szClassname ) )
+	
+	if ( !equal( szClassname, "weaponbox" ) )
+	{
+		return FMRES_IGNORED
+	}
+	
+	static iOwner; iOwner = pev( iEnt, pev_owner )
+	
+	if ( 1 <= iOwner <= g_iMaxPlayers )
+	{
+		if ( is_user_alive( iOwner ) )
+		{
+			return FMRES_IGNORED
+		}
+		
+		static iId; iId	= get_pdata_cbase( iEnt, m_rgpPlayerItems_CWeaponBox[ 2 ], 4 )
+		static iWeapon; iWeapon = iId > 0 ? cs_get_weapon_id( iId ) : 0
+	
+		switch( iWeapon )
+		{
+			case CSW_P228, CSW_ELITE, CSW_FIVESEVEN, CSW_USP, CSW_GLOCK18, CSW_DEAGLE:
+			{
+				new iAmmoId = ExecuteHam( Ham_Item_PrimaryAmmoIndex, iId )
+				
+				set_pdata_int( iEnt, m_rgiszAmmo[ 0 ], g_iszAmmoNames[ iAmmoId ], 4 )
+				set_pdata_int( iEnt, m_rgAmmo_CWeaponBox[ 0 ], cs_get_user_bpammo( iOwner, iWeapon ), 4 )
+			}
+		}
+	}
+	return FMRES_IGNORED
 }
 
 public forward_FamasWeaponReload_Post( iEnt )
@@ -112,8 +213,8 @@ public forward_FamasWeaponReload_Post( iEnt )
 	
 	if ( get_pdata_int(iEnt, m_fInReload, 4 ) )
 	{
-		set_pdata_float( id, m_flNextAttack, 3.0, 5 )
-		set_pdata_float( iEnt, m_flTimeWeaponIdle, 3.0, 4 )
+		set_pdata_float( id, m_flNextAttack, 2.4, 5 )
+		set_pdata_float( iEnt, m_flTimeWeaponIdle, 2.4, 4 )
 		//set_pev( id, pev_frame, 200.0 )
 	}
 }
@@ -199,6 +300,7 @@ public register_bots( id )
 		
 		RegisterHamFromEntity( Ham_TakeDamage, id, "forward_TakeDamage" )
 		RegisterHamFromEntity( Ham_TraceAttack, id, "forward_TraceAttack" )
+		RegisterHamFromEntity( Ham_Killed, id, "forward_Killed" )
 	}
 }
 
@@ -220,14 +322,16 @@ public forward_TakeDamage( id, iInflictor, iAttacker, Float:flDamage )
 
 public forward_TraceAttack( id, iAttacker, Float:flDamage, Float:flDirection[ 3 ], pTrace, bitDamageBits )
 {
-	if ( !( bitDamageBits & DMG_BULLET ) || get_user_weapon( iAttacker) == CSW_KNIFE )
+	const HIT_SHIELD = 8
+	const bitsBodyArmor = ( 1 << HIT_HEAD | 1 << HIT_CHEST | 1 << HIT_STOMACH )
+	const bitsVoidWeapons =	( 1 << CSW_KNIFE | 1 << CSW_G3SG1 | 1 << CSW_SG550 
+				| 1 << CSW_AWP | 1 << CSW_SCOUT | 1 << CSW_M249 )
+				
+	if ( !( bitDamageBits & DMG_BULLET ) || ( 1 << get_user_weapon( iAttacker ) ) & bitsVoidWeapons )
 	{
 		return HAM_IGNORED
 	}
-	
-	const HIT_SHIELD = 8 
-	const bitsBodyArmor = ( 1 << HIT_HEAD | 1 << HIT_CHEST | 1 << HIT_STOMACH )
-	
+
 	static iHitGroup; iHitGroup = get_tr2( pTrace, TR_iHitgroup )
 	static Float:flArmor; flArmor = float( pev( id, pev_armorvalue ) )
 	
