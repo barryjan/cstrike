@@ -124,87 +124,6 @@ public plugin_init()
 	g_iMaxPlayers = get_maxplayers()
 }
 
-public forward_Killed( id )
-{
-	static iWeapons; iWeapons = pev( id, pev_weapons )
-	
-	if ( cs_get_user_hasprim( id ) )
-	{
-		if ( iWeapons & ( 1 << CSW_P228 ) )
-		{
-			engclient_cmd( id, "drop", "weapon_p228" )
-		}
-		
-		if ( iWeapons & ( 1 << CSW_ELITE ) )
-		{
-			engclient_cmd( id, "drop", "weapon_elite" )
-		}
-		
-		if ( iWeapons & ( 1 << CSW_FIVESEVEN ) )
-		{
-			engclient_cmd( id, "drop", "weapon_fiveseven" )
-		}
-		
-		if ( iWeapons & ( 1 << CSW_USP ) )
-		{
-			engclient_cmd( id, "drop", "weapon_usp" )
-		}
-		
-		if ( iWeapons & ( 1 << CSW_GLOCK18 ) )
-		{
-			engclient_cmd( id, "drop", "weapon_glock18" )
-		}
-		
-		if ( iWeapons & ( 1 << CSW_DEAGLE ) )
-		{
-			engclient_cmd( id, "drop", "weapon_deagle" )
-		}
-	}
-	return HAM_IGNORED
-}
-
-public forward_SetModel_Post( iEnt, const szModel[] )
-{
-	if ( equal( szModel[ 9 ], "weaponbox.mdl" ) || !IsValidPrivateData( iEnt ) )
-	{
-		return FMRES_IGNORED
-	}
-	
-	static szClassname[ 11 ]
-	
-	pev( iEnt, pev_classname, szClassname, charsmax( szClassname ) )
-	
-	if ( !equal( szClassname, "weaponbox" ) )
-	{
-		return FMRES_IGNORED
-	}
-	
-	static iOwner; iOwner = pev( iEnt, pev_owner )
-	
-	if ( 1 <= iOwner <= g_iMaxPlayers )
-	{
-		if ( is_user_alive( iOwner ) )
-		{
-			return FMRES_IGNORED
-		}
-		
-		static iId; iId	= get_pdata_cbase( iEnt, m_rgpPlayerItems_CWeaponBox[ 2 ], 4 )
-		static iWeapon; iWeapon = iId > 0 ? cs_get_weapon_id( iId ) : 0
-	
-		switch( iWeapon )
-		{
-			case CSW_P228, CSW_ELITE, CSW_FIVESEVEN, CSW_USP, CSW_GLOCK18, CSW_DEAGLE:
-			{
-				static iAmmoId; iAmmoId = ExecuteHam( Ham_Item_PrimaryAmmoIndex, iId )
-				
-				set_pdata_int( iEnt, m_rgiszAmmo[ 0 ], g_iszAmmoNames[ iAmmoId ], 4 )
-				set_pdata_int( iEnt, m_rgAmmo_CWeaponBox[ 0 ], cs_get_user_bpammo( iOwner, iWeapon ), 4 )
-			}
-		}
-	}
-	return FMRES_IGNORED
-}
-
 public forward_FamasWeaponReload_Post( iEnt )
 { 
 	static id ; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
@@ -573,6 +492,45 @@ public forward_GlockPrimaryAttack_Post( iEnt )
 	}
 }
 
+public forward_Killed( id )
+{
+	static iWeapons; iWeapons = pev( id, pev_weapons )
+	
+	if ( cs_get_user_hasprim( id ) )
+	{
+		if ( iWeapons & ( 1 << CSW_P228 ) )
+		{
+			engclient_cmd( id, "drop", "weapon_p228" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_ELITE ) )
+		{
+			engclient_cmd( id, "drop", "weapon_elite" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_FIVESEVEN ) )
+		{
+			engclient_cmd( id, "drop", "weapon_fiveseven" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_USP ) )
+		{
+			engclient_cmd( id, "drop", "weapon_usp" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_GLOCK18 ) )
+		{
+			engclient_cmd( id, "drop", "weapon_glock18" )
+		}
+		
+		if ( iWeapons & ( 1 << CSW_DEAGLE ) )
+		{
+			engclient_cmd( id, "drop", "weapon_deagle" )
+		}
+	}
+	return HAM_IGNORED
+}
+
 public event_CurWeapon( id )
 {
 	new iCurWeapon = read_data( 2 )
@@ -600,4 +558,46 @@ public event_SendAudio()
 	{
 		set_msg_block( g_iMsgId_SendAudio, BLOCK_ONCE )
 	}
+}
+
+public forward_SetModel_Post( iEnt, const szModel[] )
+{
+	if ( equal( szModel[ 9 ], "weaponbox.mdl" ) || !IsValidPrivateData( iEnt ) )
+	{
+		return FMRES_IGNORED
+	}
+	
+	static szClassname[ 11 ]
+	
+	pev( iEnt, pev_classname, szClassname, charsmax( szClassname ) )
+	
+	if ( !equal( szClassname, "weaponbox" ) )
+	{
+		return FMRES_IGNORED
+	}
+	
+	static iOwner; iOwner = pev( iEnt, pev_owner )
+	
+	if ( 1 <= iOwner <= g_iMaxPlayers )
+	{
+		if ( is_user_alive( iOwner ) )
+		{
+			return FMRES_IGNORED
+		}
+		
+		static iId; iId	= get_pdata_cbase( iEnt, m_rgpPlayerItems_CWeaponBox[ 2 ], 4 )
+		static iWeapon; iWeapon = iId > 0 ? cs_get_weapon_id( iId ) : 0
+	
+		switch( iWeapon )
+		{
+			case CSW_P228, CSW_ELITE, CSW_FIVESEVEN, CSW_USP, CSW_GLOCK18, CSW_DEAGLE:
+			{
+				static iAmmoId; iAmmoId = ExecuteHam( Ham_Item_PrimaryAmmoIndex, iId )
+				
+				set_pdata_int( iEnt, m_rgiszAmmo[ 0 ], g_iszAmmoNames[ iAmmoId ], 4 )
+				set_pdata_int( iEnt, m_rgAmmo_CWeaponBox[ 0 ], cs_get_user_bpammo( iOwner, iWeapon ), 4 )
+			}
+		}
+	}
+	return FMRES_IGNORED
 }
