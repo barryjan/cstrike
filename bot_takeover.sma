@@ -17,9 +17,9 @@
 #endif
 
 const MAX_PLAYERS = 32
+
 new g_iBotIndex[ MAX_PLAYERS + 1 ]
 new g_iBotTakeoverCount[ MAX_PLAYERS + 1 ]
-
 new g_pCvar_Enable
 new g_pCvar_Limit
 new g_pCvar_AdminOnly
@@ -177,6 +177,14 @@ public forward_Spawn_Post( id )
 	    set_pdata_int( id, m_rgAmmo_CBasePlayer[ rgAmmoSlot ], iBpAmmo[ rgAmmoSlot ] )
 	}
 	*/
+	
+	static const szAmmoNames[][] = 
+	{
+		"", "338Magnum", "762Nato", "556NatoBox", "556Nato",
+		"buckshot", "45ACP", "57mm", "50AE", "357SIG",
+		"9mm", "Flashbang", "HEGrenade", "SmokeGrenade", "C4"
+	}
+	
 	new iItem[ 2 ], iSlot
 	
 	for ( iSlot = 1; iSlot <= 4; iSlot++ )
@@ -205,6 +213,7 @@ public forward_Spawn_Post( id )
 			new iAmmoId = ExecuteHam( Ham_Item_PrimaryAmmoIndex, iItem[ 0 ] )
 			new iBpAmmo = get_pdata_int( iTarget, m_rgAmmo_CBasePlayer[ iAmmoId ] )
 			
+			fm_give_item( id, szAmmoNames[ iAmmoId ] )
 			set_pdata_int( id, m_rgAmmo_CBasePlayer[ iAmmoId ], iBpAmmo )
 		}
 	}

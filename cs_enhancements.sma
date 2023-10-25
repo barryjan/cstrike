@@ -46,13 +46,11 @@ public plugin_init()
 	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_elite", "forward_AutoPrimaryAttack" )
 	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_fiveseven", "forward_AutoPrimaryAttack" )
 	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_elite", "forward_AutoPrimaryAttack_Post", .Post = 1 )
-	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_fiveseven", "forward_AutoPrimaryAttack_Post", .Post = 1 )
-	
+	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_fiveseven", "forward_AutoPrimaryAttack_Post", .Post = 1 )	
 	RegisterHam( Ham_Weapon_PrimaryAttack,	"weapon_glock18", "forward_GlockPrimaryAttack_Post", .Post = 1 )	
 	RegisterHam( Ham_Weapon_SecondaryAttack,"weapon_glock18", "forward_GlockSecondaryAttack" )
 	RegisterHam( Ham_Item_Deploy, 		"weapon_glock18", "forward_GlockDeploy_Post", .Post = 1 )
-	RegisterHam( Ham_Item_PostFrame, 	"weapon_glock18", "forward_GlockPostFrame" )
-	
+	RegisterHam( Ham_Item_PostFrame, 	"weapon_glock18", "forward_GlockPostFrame" )	
 	RegisterHam( Ham_Item_PostFrame, 	"weapon_famas", "forward_FamasPostFrame_Post", .Post = 1 )
 	RegisterHam( Ham_Weapon_Reload, 	"weapon_famas", "forward_FamasWeaponReload_Post", .Post = 1 )
 	
@@ -83,7 +81,6 @@ public plugin_init()
 	}
 	
 	RegisterHam( Ham_Item_Deploy, "weapon_knife", "forward_KnifeDeploy_Post", .Post = 1 )
-	
 	RegisterHam( Ham_TakeDamage, "player", "forward_TakeDamage" )
 	RegisterHam( Ham_TraceAttack, "player", "forward_TraceAttack" )
 	RegisterHam( Ham_Killed, "player", "forward_Killed" )
@@ -174,6 +171,7 @@ public forward_SetModel_Post( iEnt, const szModel[] )
 	}
 	
 	static szClassname[ 11 ]
+	
 	pev( iEnt, pev_classname, szClassname, charsmax( szClassname ) )
 	
 	if ( !equal( szClassname, "weaponbox" ) )
@@ -197,7 +195,7 @@ public forward_SetModel_Post( iEnt, const szModel[] )
 		{
 			case CSW_P228, CSW_ELITE, CSW_FIVESEVEN, CSW_USP, CSW_GLOCK18, CSW_DEAGLE:
 			{
-				new iAmmoId = ExecuteHam( Ham_Item_PrimaryAmmoIndex, iId )
+				static iAmmoId; iAmmoId = ExecuteHam( Ham_Item_PrimaryAmmoIndex, iId )
 				
 				set_pdata_int( iEnt, m_rgiszAmmo[ 0 ], g_iszAmmoNames[ iAmmoId ], 4 )
 				set_pdata_int( iEnt, m_rgAmmo_CWeaponBox[ 0 ], cs_get_user_bpammo( iOwner, iWeapon ), 4 )
