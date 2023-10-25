@@ -84,7 +84,7 @@ public plugin_init()
 	RegisterHam( Ham_TakeDamage, "player", "forward_TakeDamage" )
 	RegisterHam( Ham_TraceAttack, "player", "forward_TraceAttack" )
 	RegisterHam( Ham_Killed, "player", "forward_Killed" )
-
+	
 	register_event( "CurWeapon", "event_CurWeapon", "be", "1=1" )
 	register_event( "SetFOV", "event_SetFOV", "be" )
 	//register_event( "SendAudio", "event_SendAudio", "a", "1=0", "2=%!MRAD_BOMBDEF" )
