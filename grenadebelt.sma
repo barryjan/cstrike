@@ -1,15 +1,28 @@
 #include < amxmodx >
 #include < cstrike > 
 #include < fakemeta >
+#include < hamsandwich >
 #include < fun >
+
+#tryinclude <cstrike_pdatas>
+
+#if !defined _cbaseentity_included
+	#assert Cstrike Pdatas and Offsets library required! Read the below instructions:   \
+		1. Download it at forums.alliedmods.net/showpost.php?p=1712101#post1712101   \
+		2. Put it into amxmodx/scripting/include/ folder   \
+		3. Compile this plugin locally, details: wiki.amxmodx.org/index.php/Compiling_Plugins_%28AMX_Mod_X%29   \
+		4. Install compiled plugin, details: wiki.amxmodx.org/index.php/Configuring_AMX_Mod_X#Installing
+#endif
+
+#define MAX_PLAYERS 32
 
 new const PICKUP_SOUND[] = "items/9mmclip1.wav"
 
+new bool:g_bAlive[ MAX_PLAYERS + 1 ]
 new bool:g_bFreezeTime
 new Float:g_flStartTime
 new g_iMaxPlayers
 new g_pCvar_MaxGrenades
-
 new g_iMsg_BlinkAcct
 new g_iMsg_AmmoPickup
 new g_iMsg_TextMsg
@@ -38,6 +51,9 @@ public plugin_init()
 	register_clcmd( "sgren",  "cmd_sgBuy" )
 	
 	register_event( "HLTV", "event_NewRound", "a", "1=0", "2=0" )
+	register_event( "ResetHUD", "event_ResetHUD", "be" )
+	register_event( "Health", "event_Health", "bd", "1=0" )
+	
 	register_logevent( "logevent_RoundStart", 2, "0=World triggered", "1=Round_Start" )
 	
 	register_forward( FM_Touch, "forward_Touch" )
@@ -49,9 +65,84 @@ public plugin_init()
 	g_iMaxPlayers = get_maxplayers()
 }
 
+public event_ResetHUD( id )
+{
+	g_bAlive[ id ] = true
+}
+
+public event_Health( id )
+{
+	if ( !g_bAlive[ id ] )
+	{
+		return
+	}
+
+	g_bAlive[ id ] = false
+	
+	new iGrenade, iAmmoId, iAmount
+	new i, iRandDiff, iEnt
+	new Float:flOrigin[ 3 ]
+	new Float:flAngles[3 ]
+	new Float:flVelocity[ 3 ]
+
+	static const iDiffDist[ 3 ] = { 14, 0, -14 } 
+
+	enum _:
+	{
+		CSG_FB = 11, CSG_HE, CSG_SG
+	}
+	
+	static ipszArmouryEnt
+	
+	if ( !ipszArmouryEnt )
+	{
+		ipszArmouryEnt = engfunc( EngFunc_AllocString, "armoury_entity" )
+	}
+	
+	for ( iGrenade = CSG_FB; iGrenade <= CSG_SG; iGrenade++ )
+	{	
+		iAmount = get_pdata_int( id, m_rgAmmo_CBasePlayer[ iGrenade ], 5 )
+		iAmount -= iGrenade == CSG_FB ? 2 : 1
+	
+		pev( id, pev_origin, flOrigin )
+		pev( id, pev_angles, flAngles )
+		pev( id, pev_velocity, flVelocity )
+		
+		for ( i = 0; i < iAmount; i++ )
+		{
+			iRandDiff = random( 2 )
+		
+			flOrigin[0] += floatcos( flAngles[ 1 ], degrees ) * 8 + floatcos( flAngles[ 1 ] + 90, degrees) * iDiffDist[iRandDiff]
+			flOrigin[1] += floatsin( flAngles[ 1 ], degrees ) * 8 + floatsin( flAngles[ 1 ] + 90, degrees) * iDiffDist[iRandDiff]
+			
+			if ( ( iEnt = engfunc( EngFunc_CreateNamedEntity, ipszArmouryEnt ) ) > 0 )
+			{	
+				engfunc( EngFunc_SetOrigin, iEnt, flOrigin )
+				
+				flAngles[ 0 ] = 0.0, flAngles[ 1 ] += 45.0
+				
+				set_pev( iEnt, pev_angles, flAngles )
+				set_pev( iEnt, pev_velocity, flVelocity )
+				
+				switch ( iGrenade )
+				{
+					case CSG_FB: iAmmoId = 14
+					case CSG_HE: iAmmoId = 15
+					case CSG_SG: iAmmoId = 18
+				}
+				
+				set_pdata_int( iEnt, m_iItem, iAmmoId, 4 )
+				set_pdata_int( iEnt, m_iCount, 1, 4 )
+				
+				dllfunc( DLLFunc_Spawn, iEnt )
+			}
+		}
+	}
+}
+
 public forward_Touch( iEnt, id ) 
 {
-	if ( !id || id > g_iMaxPlayers || iEnt <= g_iMaxPlayers )
+	if ( !( 1 <= id <= g_iMaxPlayers ) || iEnt < g_iMaxPlayers )
 	{
 		return FMRES_IGNORED
 	}
@@ -254,6 +345,3 @@ public handle_BuyGrenade( id, iGrenade )
 	}
 	return PLUGIN_CONTINUE
 }
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
