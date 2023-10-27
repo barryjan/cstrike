@@ -1,7 +1,6 @@
 #include < amxmodx >
 #include < cstrike > 
 #include < fakemeta >
-#include < hamsandwich >
 #include < fun >
 
 #tryinclude <cstrike_pdatas>
@@ -65,6 +64,126 @@ public plugin_init()
 	g_iMaxPlayers = get_maxplayers()
 }
 
+public plugin_precache()
+{
+	precache_sound( PICKUP_SOUND )
+}
+
+public cmd_heBuy( id )
+{
+	handle_BuyGrenade( id, CSW_HEGRENADE )
+	
+	return PLUGIN_HANDLED_MAIN
+}
+
+public cmd_fbBuy( id )
+{
+	handle_BuyGrenade( id, CSW_FLASHBANG )
+	
+	return PLUGIN_HANDLED_MAIN
+}
+
+public cmd_sgBuy( id )
+{
+	handle_BuyGrenade( id, CSW_SMOKEGRENADE )
+	
+	return PLUGIN_HANDLED_MAIN
+}
+
+public handle_BuyGrenade( id, iGrenade )
+{
+	if ( !is_user_alive( id ) || !cs_get_user_buyzone( id ) )
+	{
+		return PLUGIN_CONTINUE
+	}
+	
+	new iMaxGrenades = get_pcvar_num( g_pCvar_MaxGrenades )
+	new iTotalGrenades = cs_get_user_bpammo( id, CSW_HEGRENADE )
+	
+	iTotalGrenades += cs_get_user_bpammo( id, CSW_FLASHBANG )
+	iTotalGrenades += cs_get_user_bpammo( id, CSW_SMOKEGRENADE )
+	
+	if ( iTotalGrenades >= iMaxGrenades )
+	{
+		client_print( id, print_center, "#Cstrike_TitlesTXT_Cannot_Carry_Anymore" )
+		
+		return PLUGIN_CONTINUE
+	}
+	
+	new Float:flBuyTime = get_cvar_float( "mp_buytime" ) * 60
+	
+	if ( !g_bFreezeTime && ( get_gametime() - g_flStartTime ) > flBuyTime )
+	{
+		new szBuyTime[ 3 ]
+		
+		float_to_str( flBuyTime, szBuyTime, charsmax( szBuyTime ) )
+
+		message_begin( MSG_ONE_UNRELIABLE, g_iMsg_TextMsg, _, id )
+		write_byte( 4 )
+		write_string( "#Cant_buy" )
+		write_string( szBuyTime  )
+		message_end()
+
+		return PLUGIN_CONTINUE
+	}
+	
+	new iMoney = cs_get_user_money( id ) - ( ( iGrenade == CSW_FLASHBANG ) ? 200 : 300 )
+	
+	if ( iMoney < 0 )
+	{
+		client_print( id, print_center, "#Cstrike_TitlesTXT_Not_Enough_Money" )
+		
+		message_begin( MSG_ONE_UNRELIABLE, g_iMsg_BlinkAcct, _, id )
+		write_byte( 2 )
+		message_end()
+		
+		return PLUGIN_CONTINUE
+	}
+	else
+	{
+		cs_set_user_money( id, iMoney )
+	}
+
+	new iGrenadeCount = cs_get_user_bpammo( id, iGrenade )
+
+	if ( iGrenadeCount < 1 )
+	{
+		switch ( iGrenade )
+		{
+			case CSW_HEGRENADE: give_item( id, "weapon_hegrenade" )
+			case CSW_FLASHBANG: give_item( id, "weapon_flashbang" )
+			case CSW_SMOKEGRENADE: give_item( id, "weapon_smokegrenade" )
+		}
+	}
+	else
+	{
+		message_begin( MSG_ONE_UNRELIABLE, g_iMsg_AmmoPickup, _, id )
+		switch ( iGrenade )
+		{
+			case CSW_FLASHBANG: write_byte( 11 )
+			case CSW_HEGRENADE: write_byte( 12 )
+			case CSW_SMOKEGRENADE: write_byte( 13 )
+		}
+		write_byte( 1 )
+		message_end()
+		
+		cs_set_user_bpammo( id, iGrenade, iGrenadeCount + 1 )
+		emit_sound( id, CHAN_WEAPON, PICKUP_SOUND, 1.0, ATTN_NORM, 0, PITCH_NORM )
+	}
+	return PLUGIN_CONTINUE
+}
+
+public event_NewRound() 
+{
+	g_bFreezeTime = true
+}
+
+public logevent_RoundStart()
+{
+	g_bFreezeTime = false
+	g_flStartTime = get_gametime()
+}
+
 public event_ResetHUD( id )
 {
 	g_bAlive[ id ] = true
@@ -82,16 +201,11 @@ public event_Health( id )
 	new iGrenade, iAmmoId, iAmount
 	new i, iRandDiff, iEnt
 	new Float:flOrigin[ 3 ]
-	new Float:flAngles[3 ]
+	new Float:flAngles[ 3 ]
 	new Float:flVelocity[ 3 ]
-
-	static const iDiffDist[ 3 ] = { 14, 0, -14 } 
-
-	enum _:
-	{
-		CSG_FB = 11, CSG_HE, CSG_SG
-	}
 	
+	enum _: { CSG_FB = 11, CSG_HE, CSG_SG }
+	static const iDiffDist[ 3 ] = { 14, 0, -14 } 
 	static ipszArmouryEnt
 	
 	if ( !ipszArmouryEnt )
@@ -99,21 +213,23 @@ public event_Health( id )
 		ipszArmouryEnt = engfunc( EngFunc_AllocString, "armoury_entity" )
 	}
 	
+	pev( id, pev_origin, flOrigin )
+	pev( id, pev_angles, flAngles )
+	pev( id, pev_velocity, flVelocity )
+	
 	for ( iGrenade = CSG_FB; iGrenade <= CSG_SG; iGrenade++ )
 	{	
 		iAmount = get_pdata_int( id, m_rgAmmo_CBasePlayer[ iGrenade ], 5 )
-		iAmount -= iGrenade == CSG_FB ? 2 : 1
-	
-		pev( id, pev_origin, flOrigin )
-		pev( id, pev_angles, flAngles )
-		pev( id, pev_velocity, flVelocity )
+		//iAmount -= iGrenade == CSG_FB ? 2 : 1
 		
 		for ( i = 0; i < iAmount; i++ )
 		{
 			iRandDiff = random( 2 )
 		
-			flOrigin[0] += floatcos( flAngles[ 1 ], degrees ) * 8 + floatcos( flAngles[ 1 ] + 90, degrees) * iDiffDist[iRandDiff]
-			flOrigin[1] += floatsin( flAngles[ 1 ], degrees ) * 8 + floatsin( flAngles[ 1 ] + 90, degrees) * iDiffDist[iRandDiff]
+			flOrigin[ 0 ] += floatcos( flAngles[ 1 ], degrees ) * 8 + 
+			floatcos( flAngles[ 1 ] + 90, degrees) * iDiffDist[ iRandDiff ]
+			flOrigin[ 1 ] += floatsin( flAngles[ 1 ], degrees ) * 8 + 
+			floatsin( flAngles[ 1 ] + 90, degrees) * iDiffDist[ iRandDiff ]
 			
 			if ( ( iEnt = engfunc( EngFunc_CreateNamedEntity, ipszArmouryEnt ) ) > 0 )
 			{	
@@ -224,124 +340,6 @@ public forward_Touch( iEnt, id )
 	return FMRES_IGNORED
 }
 
-public plugin_precache()
-{
-	precache_sound( PICKUP_SOUND )
-}
-
-public cmd_heBuy( id )
-{
-	handle_BuyGrenade( id, CSW_HEGRENADE )
-	
-	return PLUGIN_HANDLED_MAIN
-}
-
-public cmd_fbBuy( id )
-{
-	handle_BuyGrenade( id, CSW_FLASHBANG )
-	
-	return PLUGIN_HANDLED_MAIN
-}
-
-public cmd_sgBuy( id )
-{
-	handle_BuyGrenade( id, CSW_SMOKEGRENADE )
-	
-	return PLUGIN_HANDLED_MAIN
-}
-
-public event_NewRound() 
-{
-	g_bFreezeTime = true
-}
-
-public logevent_RoundStart()
-{
-	g_bFreezeTime = false
-	g_flStartTime = get_gametime()
-}
-
-public handle_BuyGrenade( id, iGrenade )
-{
-	if ( !is_user_alive( id ) || !cs_get_user_buyzone( id ) )
-	{
-		return PLUGIN_CONTINUE
-	}
-	
-	new iMaxGrenades = get_pcvar_num( g_pCvar_MaxGrenades )
-	new iTotalGrenades = cs_get_user_bpammo( id, CSW_HEGRENADE )
-	
-	iTotalGrenades += cs_get_user_bpammo( id, CSW_FLASHBANG )
-	iTotalGrenades += cs_get_user_bpammo( id, CSW_SMOKEGRENADE )
-	
-	if ( iTotalGrenades >= iMaxGrenades )
-	{
-		client_print( id, print_center, "#Cstrike_TitlesTXT_Cannot_Carry_Anymore" )
-		
-		return PLUGIN_CONTINUE
-	}
-	
-	new Float:flBuyTime = get_cvar_float( "mp_buytime" ) * 60
-	
-	if ( !g_bFreezeTime && ( get_gametime() - g_flStartTime ) > flBuyTime )
-	{
-		new szBuyTime[ 3 ]
-		
-		float_to_str( flBuyTime, szBuyTime, charsmax( szBuyTime ) )
-
-		message_begin( MSG_ONE_UNRELIABLE, g_iMsg_TextMsg, _, id )
-		write_byte( 4 )
-		write_string( "#Cant_buy" )
-		write_string( szBuyTime  )
-		message_end()
-
-		return PLUGIN_CONTINUE
-	}
-	
-	new iMoney = cs_get_user_money( id ) - ( ( iGrenade == CSW_FLASHBANG ) ? 200 : 300 )
-	
-	if ( iMoney < 0 )
-	{
-		client_print( id, print_center, "#Cstrike_TitlesTXT_Not_Enough_Money" )
-		
-		message_begin( MSG_ONE_UNRELIABLE, g_iMsg_BlinkAcct, _, id )
-		write_byte( 2 )
-		message_end()
-		
-		return PLUGIN_CONTINUE
-	}
-	else
-	{
-		cs_set_user_money( id, iMoney )
-	}
-
-	new iGrenadeCount = cs_get_user_bpammo( id, iGrenade )
-
-	if ( iGrenadeCount < 1 )
-	{
-		switch ( iGrenade )
-		{
-			case CSW_HEGRENADE: give_item( id, "weapon_hegrenade" )
-			case CSW_FLASHBANG: give_item( id, "weapon_flashbang" )
-			case CSW_SMOKEGRENADE: give_item( id, "weapon_smokegrenade" )
-		}
-	}
-	else
-	{
-		message_begin( MSG_ONE_UNRELIABLE, g_iMsg_AmmoPickup, _, id )
-		{
-			switch ( iGrenade )
-			{
-				case CSW_HEGRENADE: write_byte( 12 )
-				case CSW_FLASHBANG: write_byte( 11 )
-				case CSW_SMOKEGRENADE: write_byte( 13 )
-			}
-			write_byte( 1 )
-		}
-		message_end()
-		
-		cs_set_user_bpammo( id, iGrenade, iGrenadeCount + 1 )
-		emit_sound( id, CHAN_WEAPON, PICKUP_SOUND, 1.0, ATTN_NORM, 0, PITCH_NORM )
-	}
-	return PLUGIN_CONTINUE
-}
+/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
+*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
+*/
