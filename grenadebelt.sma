@@ -3,7 +3,7 @@
 #include < fakemeta >
 #include < fun >
 
-#tryinclude <cstrike_pdatas>
+#tryinclude < cstrike_pdatas >
 
 #if !defined _cbaseentity_included
 	#assert Cstrike Pdatas and Offsets library required! Read the below instructions:   \
@@ -176,6 +176,13 @@ public handle_BuyGrenade( id, iGrenade )
 public event_NewRound() 
 {
 	g_bFreezeTime = true
+	
+	new iEnt = -1
+	
+	while ( ( iEnt = engfunc( EngFunc_FindEntityByString, iEnt, "classname", "_armoury_entity" ) ) )
+	{
+		engfunc( EngFunc_RemoveEntity, iEnt )
+	}
 }
 
 public logevent_RoundStart()
@@ -233,6 +240,7 @@ public event_Health( id )
 			
 			if ( ( iEnt = engfunc( EngFunc_CreateNamedEntity, ipszArmouryEnt ) ) > 0 )
 			{	
+				set_pev( iEnt, pev_classname, "_armoury_entity" )
 				engfunc( EngFunc_SetOrigin, iEnt, flOrigin )
 				
 				flAngles[ 0 ] = 0.0, flAngles[ 1 ] += 45.0
@@ -340,6 +348,3 @@ public forward_Touch( iEnt, id )
 	return FMRES_IGNORED
 }
 
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
