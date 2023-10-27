@@ -275,7 +275,9 @@ public forward_Touch( iEnt, id )
 	
 	pev( iEnt, pev_classname, szClassname, charsmax( szClassname ) )
 	
-	if ( !equal( szClassname, "armoury_entity" ) && !equal( szClassname, "weaponbox" ) )
+	if ( !equal( szClassname, "armoury_entity" ) 
+	&& !equal( szClassname, "_armoury_entity" ) 
+	&& !equal( szClassname, "weaponbox" ) )
 	{
 		return FMRES_IGNORED
 	}
