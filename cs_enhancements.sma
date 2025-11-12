@@ -19,8 +19,10 @@
 #define IsValidPrivateData(%1) 	( pev_valid( %1 ) == 2 )
 #define USERPREFS_HAS_SHIELD 	(1<<24)
 #define FIRE_RATE_GLOCK 	0.08 //0.0545
-#define MAX_INACCURACY 		1
+#define MAX_INACCURACY 		3
 #define MAX_AMMONAMES		15
+
+new g_szLowClipSound[] = "items/9mmclip1.wav"
 
 new g_iOldClip
 new g_iResetDuckFlag
@@ -78,6 +80,7 @@ public plugin_init()
 	for ( new i = 0; i < sizeof ( szAutoWeapons ); i++ )
 	{
 		RegisterHam( Ham_Weapon_PlayEmptySound,  szAutoWeapons[ i ], "forward_WeaponPlayEmptySound" )
+		RegisterHam( Ham_Weapon_PrimaryAttack,  szAutoWeapons[ i ], "forward_WeaponLowClipSound" )
 	}
 	
 	RegisterHam( Ham_Item_Deploy, "weapon_knife", "forward_KnifeDeploy_Post", .Post = 1 )
@@ -139,6 +142,7 @@ public forward_FamasWeaponReload_Post( iEnt )
 public plugin_precache()
 {
 	g_iForward_Spawn = register_forward( FM_Spawn, "forward_Spawn" )
+	precache_sound( g_szLowClipSound )
 }
 
 public forward_Spawn( iEnt )
@@ -332,6 +336,17 @@ public forward_WeaponPlayEmptySound( iEnt )
 			ExecuteHamB( Ham_Weapon_RetireWeapon, iEnt )
 			ExecuteHamB( Ham_Item_Deploy, iSecWeapon )
 		}
+	}
+}
+
+public forward_WeaponLowClipSound( iEnt )
+{
+	static id; id = get_pdata_cbase( iEnt, m_pPlayer, 4 )
+	static iClip; iClip = get_pdata_int( iEnt, m_iClip, 4 )
+	
+	if ( 1 < iClip <= 10 )
+	{
+		client_cmd( id, "spk %s", g_szLowClipSound )
 	}
 }
 
