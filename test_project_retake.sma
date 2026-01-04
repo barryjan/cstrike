@@ -329,7 +329,7 @@ Nav_TeleportPlayerToArea( id, iArea )
     
     new Float:up[3]
     xs_vec_copy( center, up )
-    up[2] = ext[2] + 72.0
+    up[2] = ext[2] + 73.0
     
     new tr = create_tr2()
     engfunc( EngFunc_TraceHull, center, up, IGNORE_MONSTERS, HULL_HUMAN, id, tr )
@@ -341,7 +341,7 @@ Nav_TeleportPlayerToArea( id, iArea )
     get_tr2( tr, TR_flFraction, fraction )
     
     if ( fraction < 1.0 )
-	center[2] = hit[2] - 72.0
+	center[2] = hit[2] - 73.0
 
     free_tr2( tr )
 
@@ -590,6 +590,24 @@ Nav_FilterSpawnableAreas()
 			{
 				bSpawnable = false
 			}
+			
+			new Float:flCenter[ 3 ]
+			flCenter[ 0 ] = ( flExt[ 0 ] + flExt[ 3 ] ) * 0.5
+			flCenter[ 1 ] = ( flExt[ 1 ] + flExt[ 4 ] ) * 0.5
+			flCenter[ 2 ] = flExt[ 5 ] + 72.0
+			
+			new tr = create_tr2()
+			engfunc( EngFunc_TraceHull, flCenter, flCenter, IGNORE_MONSTERS, HULL_HUMAN, 0, tr )
+			
+			new Float:flFraction
+			get_tr2( tr, TR_flFraction, flFraction )
+			
+			if ( get_tr2( tr, TR_AllSolid ) || get_tr2( tr, TR_StartSolid ) || flFraction < 1.0 )
+			{
+				bSpawnable = false
+			}
+			
+			free_tr2( tr )
 		}
 		ArrayPushCell( g_aAreaSpawnable, bSpawnable )
 	}
