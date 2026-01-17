@@ -926,7 +926,10 @@ public round_OnBombPlanted()
     if ( !retakes_IsEnabled() )
         return
 
-    if ( g_flNewRoundTime > 0.0 && retakes_HasFlag( RETAKES_SHOWTIMER ) )
+    if ( !retakes_HasFlag( RETAKES_SHOWTIMER ) )
+        return
+	
+    if ( g_flNewRoundTime > 0.0 )
         set_task( 1.0, "round_UpdateTimerHUD", TASKID_ROUNDTIME )
 }
 
@@ -998,12 +1001,12 @@ public msg_OnCurWeapon( id )
     if ( !retakes_IsEnabled() )
         return
 
-    if ( retakes_HasFlag( RETAKES_AUTOPLANT ) )
-    {
-        // Force C4 to appear in weapon list
-        new iWeapons = pev( id, pev_weapons )
-        set_pev( id, pev_weapons, iWeapons | ( 1 << CSW_C4 ) )
-    }
+    if ( !retakes_HasFlag( RETAKES_AUTOPLANT ) )
+        return
+	
+    // Force C4 to appear in weapon list
+    new iWeapons = pev( id, pev_weapons )
+    set_pev( id, pev_weapons, iWeapons | ( 1 << CSW_C4 ) )
 }
 
 
