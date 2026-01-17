@@ -81,6 +81,7 @@ enum _:RetakesFlags
 
 const Float:flHalfHumanHeight 	= 36.0
 const Float:flHumanHeight 	= 72.0
+const Float:flHumanWidth 	= 32.0
 
 new Array:g_aPlaceNames
 new Array:g_aAreaID
@@ -1105,8 +1106,6 @@ spawn_FilterSpawnableAreas()
         }
         else
         {
-            const Float:flHumanWidth = 32.0
-
             new Float:flExt[ 6 ]
             ArrayGetArray( g_aAreaExtents, i, flExt )
 
@@ -1257,14 +1256,7 @@ spawn_TeleportPlayer( id, iArea )
     new const Float:flVecDuckHullMin[] = { -16.0, -16.0, -18.0 }
     new const Float:flVecDuckHullMax[] = {  16.0,  16.0,  32.0 }
 
-    engfunc
-    (
-        EngFunc_SetSize,
-        id,
-        flVecDuckHullMin,
-        flVecDuckHullMax
-    )
-
+    engfunc( EngFunc_SetSize, id, flVecDuckHullMin, flVecDuckHullMax )
     engfunc( EngFunc_SetOrigin, id, flEnd )
     //engfunc( EngFunc_DropToFloor, id )
 
@@ -1755,7 +1747,7 @@ stock bool:util_AreaLOS_Multi( iAreaA, iAreaB )
     util_AreaCenter( iAreaA, flCenterA )
     util_AreaCenter( iAreaB, flCenterB )
     
-    const Float:flOffset = 32.0
+    const Float:flOffset = flHumanWidth
 
     // Multi-sample offsets (center + 4 edge samples)
     static const Float:flOffsets[ 5 ][ 3 ] =
@@ -1770,7 +1762,7 @@ stock bool:util_AreaLOS_Multi( iAreaA, iAreaB )
     new Float:flFrom[ 3 ], Float:flTo[ 3 ]
 
     // Test all samples
-    for ( new i = 0; i < 5; i++ )
+    for ( new i = 0; i < sizeof flOffsets; i++ )
     {
         xs_vec_add( flCenterA, flOffsets[ i ], flFrom )
         xs_vec_add( flCenterB, flOffsets[ i ], flTo )
@@ -1787,6 +1779,7 @@ stock bool:util_AreaLOS_Multi( iAreaA, iAreaB )
 // Trace: single-sample LOS test between two points
 // Returns true if the trace reaches the end point with no obstruction.
 // ---------------------------------------------------------------------------
+
 stock bool:util_HasLineOfSight( const Float:flFrom[ 3 ], const Float:flTo[ 3 ] )
 {
     new iTrace = create_tr2()
@@ -2006,7 +1999,7 @@ nav_ParseAreas( iFile )
         /*struct connectionData_t {
            unsigned int count;             4
            unsigned int AreaIDs[ count ];  4
-       }*/
+        }*/
 
         // Skip rest of area (hides, approaches, encounters)
 	
@@ -2020,7 +2013,7 @@ nav_ParseAreas( iFile )
            unsigned int ID;            4
            float position[ 3 ];        4 * 3
            unsigned char Attributes;   1
-       }*/
+        }*/
 
         new iApproachCount
         fread( iFile, iApproachCount, BLOCK_CHAR )
@@ -2034,7 +2027,7 @@ nav_ParseAreas( iFile )
            byte approachType;      1
            uint approachNextId;    4
            byte approachHow;       1
-       }*/
+        }*/
 
         new iEncounterCount
         fread( iFile, iEncounterCount, BLOCK_INT )
@@ -2048,6 +2041,20 @@ nav_ParseAreas( iFile )
             iSpotCount &= 0xFF
 
             fseek( iFile, iSpotCount * ( 4 + 1 ), SEEK_CUR )
+
+            /*struct encounterPath_t {
+                unsigned int EntryAreaID;           4
+                unsigned byte EntryDirection;       1
+                unsigned int DestAreaID;            4
+                unsigned byte DestDirection;        1
+                unsigned char encounterSpotCount;   1
+                encounterSpot_t encounterSpots[ encounterSpotCount ];
+            }
+			
+            struct encounterSpot_t {
+                unsigned int AreaID;                4
+                unsigned char ParametricDistance;   1
+            }*/
         }
 
         // Place entry
