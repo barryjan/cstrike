@@ -457,10 +457,10 @@ public c4_OnUse( iEnt, iPlayer )
         
     if ( retakes_HasFlag( RETAKES_INSTADEFUSE_ELIM ) )
     {
-        new iPlayers[ 32 ], iCount
-        get_players( iPlayers, iCount, "ae", "TERRORIST" )
+        new iPlayers[ 32 ], iNum
+        get_players( iPlayers, iNum, "ae", "TERRORIST" )
         
-        if ( iCount > 0 )
+        if ( iNum > 0 )
             return
     }
 
@@ -1038,12 +1038,12 @@ public msg_ShowTimerHUD( id, iTimer )
 
 msg_BroadcastTimerHUD()
 {
-    new iPlayers[ 32 ], iCount
-    get_players( iPlayers, iCount )
+    new iPlayers[ 32 ], iNum
+    get_players( iPlayers, iNum )
 
     new iTimer = get_pcvar_num( g_pCvar_C4Timer )
 
-    for ( new i = 0; i < iCount; i++ )
+    for ( new i = 0; i < iNum; i++ )
     {
         msg_ShowTimerHUD( iPlayers[ i ], iTimer )
     }
@@ -1915,7 +1915,7 @@ nav_ParsePlaces( iFile )
     new iPlaceCount
     fread( iFile, iPlaceCount, BLOCK_SHORT )
 
-    new szPlaceName[ 32 ]
+    new szPlaceName[ 256 ]
 
     for ( new i = 0; i < iPlaceCount; i++ )
     {
@@ -1927,7 +1927,7 @@ nav_ParsePlaces( iFile )
         if ( iRead > 0 )
         {
             fread_blocks( iFile, szPlaceName, iRead, BLOCK_CHAR )
-            iRead &= 0xFF
+
             szPlaceName[ iRead - 1 ] = 0
         }
 	
@@ -2115,6 +2115,3 @@ nav_FindAreaIndexByID( iAreaID )
     }
     return -1
 }
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
