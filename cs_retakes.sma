@@ -149,11 +149,11 @@ public plugin_init()
     
     new iResult = nav_Load( szMapname )
     
-    switch( iResult )
+    switch ( iResult )
     {
         case -2: server_print( "[NAV] Unable to open navigation file for %s", szMapname )
         case -1: server_print( "[NAV] Invalid navigation file, %s", szMapname )
-        case  0: server_print( "[NAV] Unsupported version in navigation file for %s", szMapname )
+        case  0: server_print( "[NAV] Unsupported navigation file version for %s", szMapname )
         default:
         {
             spawn_InitArrays()
@@ -194,13 +194,13 @@ public plugin_init()
     g_pCvar_RotateRound	= register_cvar( "amx_retakes_rotateround", "5" )
     g_pCvar_StateBuffer	= register_cvar( "amx_retakes_statebuffer", "4" )
     g_pCvar_MaxPlayers	= register_cvar( "amx_retakes_maxplayers", "12" )
-    g_pCvar_RetakesFlags	= register_cvar( "amx_retakes_flags", "abcdefg" )
+    g_pCvar_RetakesFlags= register_cvar( "amx_retakes_flags", "abcdefg" )
     
     g_pCvar_C4Timer 	= get_cvar_pointer( "mp_c4timer" )
     
     // Initial state
-    g_bRetakesEnabled = get_pcvar_num( g_pCvar_Enable ) ? true : false
-    g_iMaxPlayers = get_maxplayers()
+    g_bRetakesEnabled 	= get_pcvar_num( g_pCvar_Enable ) ? true : false
+    g_iMaxPlayers 	= get_maxplayers()
     
     // Message IDs
     g_iMsgId_ShowTimer = get_user_msgid( "ShowTimer" )
@@ -297,7 +297,7 @@ bool:retakes_UpdateState()
             new iRoundsLeft = iStateBuffer - g_iRetakesStateBuffer
             new szText[ 32 ]
             
-            switch( iRoundsLeft )
+            switch ( iRoundsLeft )
             {
                 case 0: 
                 {
@@ -715,7 +715,7 @@ round_SelectSite()
     {
         case 0:
         {
-            // Streak logic: avoid 4+ same site in a row
+            // Streak logic: avoid 2+ same site in a row
             g_iSiteStreak = ( iSite == g_iLastSite ) ? g_iSiteStreak + 1 : 1
 
             if ( g_iSiteStreak > iMaxStreak )
