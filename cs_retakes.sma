@@ -55,7 +55,7 @@
 #endif
 
 #if !defined m_flArmedTime2
-    stock const m_flArmedTime2 = 81
+    stock const m_flArmedTime2 	= 81
 #endif
 
 #define DEBUG_NAV // Enable this to print NAV loading
@@ -73,7 +73,7 @@ enum _:RetakesFlags
     RETAKES_AUTOPLANT 		= ( 1<<0 ), // a
     RETAKES_INSTAPLANT 		= ( 1<<1 ), // b
     RETAKES_DEFUSEKIT 		= ( 1<<2 ), // c
-    RETAKES_INSTADEFUSE 		= ( 1<<3 ), // d
+    RETAKES_INSTADEFUSE 	= ( 1<<3 ), // d
     RETAKES_INSTADEFUSE_ELIM 	= ( 1<<4 ), // e
     RETAKES_SHOWTIMER 		= ( 1<<5 ), // f
     RETAKES_TEAMROTATION 	= ( 1<<6 )  // g
@@ -92,7 +92,7 @@ new Array:g_aAreaPlaceEntry
 new Array:g_aAreaSpawnable
 new Array:g_aSpawnCandidates
 new Array:g_aBombsiteAreas[ 2 ]	// 0 = A, 1 = B
-new Array:g_aBombsiteLayers[ 2 ]	// Array of Array for each site
+new Array:g_aBombsiteLayers[ 2 ]// Array of Array for each site
 new Array:g_aLOSToBombsite[ 2 ]	// 0 = A, 1 = B
 new Array:g_aAreaVisible
 new Array:g_aAreaUsed
@@ -285,7 +285,7 @@ bool:retakes_UpdateState()
     
     new iMaxAllowed = get_pcvar_num( g_pCvar_MaxPlayers )
     new iStateBuffer = get_pcvar_num( g_pCvar_StateBuffer )
-    iStateBuffer = min( iStateBuffer, iMinBuffer )
+    iStateBuffer = max( iStateBuffer, iMinBuffer ) // clamp to iMinBuffer
     
     // Too many players -> begin disabling
     if ( iNum > iMaxAllowed )
@@ -306,7 +306,7 @@ bool:retakes_UpdateState()
                     client_print
                     ( 
                         0, print_chat,
-                        "[RETAKES] Mode is active!",
+                        "[RETAKES] Mode is disabled!",
                         szText
                     )
                 }
@@ -707,7 +707,7 @@ round_SelectSite()
 
     new iForce = get_pcvar_num( g_pCvar_ForceSite )
     new iMaxStreak = get_pcvar_num( g_pCvar_SiteStreak )
-    iMaxStreak = min( iMaxStreak, iMinStreak ) //clamp to iMinStreak
+    iMaxStreak = max( iMaxStreak, iMinStreak ) //clamp to iMinStreak
     
     new iSite = random( 2 )
 
@@ -866,7 +866,10 @@ public round_OnRoundEnd()
 
         for ( new i = 0; i < iCount; i++ )
         {
-            new iGroup = min( i, sizeof( flDelays ) - 1 )
+            new id = iPlayers[ i ]
+	    
+            new iGroup = ( id - 1 ) / 8
+            iGroup = min( iGroup, sizeof flDelays - 1 )
 
             set_task( flDelays[ iGroup ], "round_ChangeTeam", iPlayers[ i ] )
         }
@@ -1055,7 +1058,7 @@ spawn_InitArrays()
     g_aAreaSpawnable 	= ArrayCreate()
     g_aSpawnCandidates 	= ArrayCreate()
     g_aAreaVisible 	= ArrayCreate()
-    g_aAreaUsed 		= ArrayCreate()
+    g_aAreaUsed 	= ArrayCreate()
 }
 
 
@@ -1186,7 +1189,7 @@ spawn_BuildCandidates( iSite, iLayer )
             if ( ArrayGetCell( g_aLOSToBombsite[ iSite ], iArea ) )
                 continue
 
-            // Must NOT be visible from previous T spawns
+            // Must NOT be visible from T spawns
             if ( ArrayGetCell( g_aAreaVisible, iArea ) )
                 continue
         }
@@ -1327,7 +1330,7 @@ spawn_FindValidLayer( iSite, iMinLayer, iMaxLayer )
     new iLayer = random_num( iMinLayer, iMaxLayer )
 
     // Scan forward from random layer -> outward
-    for (; iLayer < iLayerCount; iLayer++ )
+    for ( ; iLayer < iLayerCount; iLayer++ )
     {
         spawn_BuildCandidates( iSite, iLayer )
 
@@ -1754,7 +1757,7 @@ stock bool:util_AreaLOS_Multi( iAreaA, iAreaB )
     // Multi-sample offsets (center + 4 edge samples)
     static const Float:flOffsets[ 5 ][ 3 ] =
     {
-        {  0.0,        0.0,  0.0 },   // center
+        {  0.0,       0.0,  0.0 },   // center
         {  flOffset,  0.0,  0.0 },   // east
         { -flOffset,  0.0,  0.0 },   // west
         {  0.0,  flOffset,  0.0 },   // north
@@ -1966,7 +1969,7 @@ nav_ParseAreas( iFile )
         fread_raw( iFile, iBits, sizeof iBits, BLOCK_INT )
 
         new Float:flExt[ 6 ]
-        for ( new j = 0; j < 6; j++ )
+        for ( new j = 0; j < sizeof flExt; j++ )
             flExt[ j ] = Float:iBits[ j ]
 
         ArrayPushArray( g_aAreaExtents, flExt )
@@ -2098,6 +2101,3 @@ nav_FindAreaIndexByID( iAreaID )
     }
     return -1
 }
-/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
-*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
-*/
