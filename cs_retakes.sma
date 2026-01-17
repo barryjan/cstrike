@@ -58,7 +58,7 @@
     stock const m_flArmedTime2 	= 81
 #endif
 
-#define DEBUG_NAV // Enable this to print NAV loading
+//#define DEBUG_NAV // Enable this to print NAV loading
 
 #define MAX_BOMBSITE_LAYERS 	12
 
@@ -72,7 +72,7 @@ enum _:RetakesFlags
 {
     RETAKES_AUTOPLANT 		= ( 1<<0 ), // a
     RETAKES_INSTAPLANT 		= ( 1<<1 ), // b
-    RETAKES_DEFUSEKIT 		= ( 1<<2 ), // c
+    RETAKES_DEFUSEKIT		= ( 1<<2 ), // c
     RETAKES_INSTADEFUSE 	= ( 1<<3 ), // d
     RETAKES_INSTADEFUSE_ELIM 	= ( 1<<4 ), // e
     RETAKES_SHOWTIMER 		= ( 1<<5 ), // f
@@ -267,7 +267,7 @@ retakes_GetFlags()
     return g_iRetakesFlagsCache
 }
 
-stock bool:retakes_HasFlag( iFlag )
+bool:retakes_HasFlag( iFlag )
 {
     return ( retakes_GetFlags() & iFlag ) ? true : false
 }
@@ -364,9 +364,9 @@ public retakes_onRestart()
     if ( !retakes_IsEnabled() )
         return
     
-    g_iRoundCount = 0
+    g_iRoundCount          = 0
     g_iRetakesStateBuffer = 0
-    g_iRetakesFlagsCache = 0
+    g_iRetakesFlagsCache  = 0
 }
 
 
@@ -409,7 +409,7 @@ retakes_CreateGlobalBuyzone()
 // ---------------------------------------------------------------------------
 public c4_OnSpawnedWithTheBomb()
 {
-    if ( !g_bRetakesEnabled )
+    if ( !retakes_IsEnabled() )
         return
 
     new szLogUser[ 80 ], szName[ 32 ]
@@ -483,6 +483,7 @@ public c4_OnUse( iEnt, iPlayer )
 c4_FindWeaponBox()
 {
     new iEnt = engfunc( EngFunc_FindEntityByString, -1, "classname", "weapon_c4" )
+    
     return ( iEnt > 0 ) ? pev( iEnt, pev_owner ) : 0
 }
 
@@ -506,15 +507,16 @@ c4_FindOwner()
 
 c4_FindPlanted()
 {
-    new iEnt = -1
+    /*new iEnt = -1
 
     while ( ( iEnt = engfunc( EngFunc_FindEntityByString, iEnt, "classname", "grenade" ) ) )
     {
         if ( get_pdata_bool( iEnt, m_bIsC4, XO_CGRENADE ) )
             return iEnt
-    }
+    }*/
+    new iEnt = engfunc( EngFunc_FindEntityByString, -1, "model" , "models/w_c4.mdl" )
 
-    return 0
+    return iEnt
 }
 
 
@@ -570,10 +572,10 @@ c4_AutoPlant( iSite )
     // -----------------------------------------------------------------------
     if ( ( iC4 = c4_FindWeaponBox() ) > 0 )
     {
-        new iPlayers[ 32 ], iCount
-        get_players( iPlayers, iCount, "ae", "TERRORIST" )
+        new iPlayers[ 32 ], iNum
+        get_players( iPlayers, iNum, "ae", "TERRORIST" )
 
-        iOwner = ( iCount > 0 ) ? iPlayers[ random( iCount ) ] : 0
+        iOwner = ( iNum > 0 ) ? iPlayers[ random( iNum ) ] : 0
 
         if ( iOwner )
         {
@@ -862,10 +864,10 @@ public round_OnRoundEnd()
     // Team rotation
     if ( g_iRoundCount >= get_pcvar_num( g_pCvar_RotateRound ) )
     {
-        new iPlayers[ 32 ], iCount
-        get_players( iPlayers, iCount )
+        new iPlayers[ 32 ], iNum
+        get_players( iPlayers, iNum )
 
-        for ( new i = 0; i < iCount; i++ )
+        for ( new i = 0; i < iNum; i++ )
         {
             new id = iPlayers[ i ]
 	    
