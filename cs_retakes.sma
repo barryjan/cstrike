@@ -345,7 +345,9 @@ bool:retakes_UpdateState()
 
         if ( g_iRetakesStateBuffer == 1 )
         {
-            client_print( 0, print_chat,
+            client_print
+	   ( 
+	       0, print_chat,
                 "[RETAKES] Low player count. Enabling next round."
             )
         }
@@ -364,7 +366,7 @@ public retakes_onRestart()
     if ( !retakes_IsEnabled() )
         return
     
-    g_iRoundCount          = 0
+    g_iRoundCount         = 0
     g_iRetakesStateBuffer = 0
     g_iRetakesFlagsCache  = 0
 }
@@ -872,9 +874,9 @@ public round_OnRoundEnd()
             new id = iPlayers[ i ]
 	    
             new iGroup = ( id - 1 ) / 8
-            iGroup = min( iGroup, sizeof flDelays - 1 )
+            iGroup = min( iGroup, ( sizeof flDelays - 1 ) )
 
-            set_task( flDelays[ iGroup ], "round_ChangeTeam", iPlayers[ i ] )
+            set_task( flDelays[ iGroup ], "round_ChangeTeam", id )
         }
 
         g_iRoundCount = 0
@@ -2113,3 +2115,6 @@ nav_FindAreaIndexByID( iAreaID )
     }
     return -1
 }
+/* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE
+*{\\ rtf1\\ ansi\\ deff0{\\ fonttbl{\\ f0\\ fnil Tahoma;}}\n\\ viewkind4\\ uc1\\ pard\\ lang1033\\ f0\\ fs16 \n\\ par }
+*/
