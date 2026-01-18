@@ -346,8 +346,8 @@ bool:retakes_UpdateState()
         if ( g_iRetakesStateBuffer == 1 )
         {
             client_print
-	   ( 
-	       0, print_chat,
+	    ( 
+	        0, print_chat,
                 "[RETAKES] Low player count. Enabling next round."
             )
         }
@@ -373,7 +373,7 @@ public retakes_onRestart()
 
 
 // ---------------------------------------------------------------------------
-// CORE: Create global buyzone so players can buy anywhere
+// Core: Create global buyzone so players can buy anywhere
 // ---------------------------------------------------------------------------
 
 retakes_CreateGlobalBuyzone()
@@ -753,9 +753,9 @@ public round_OnRestart()
     if ( !retakes_IsEnabled() )
         return
 
-    g_iRoundCount = 0
+    g_iRoundCount         = 0
     g_iRetakesStateBuffer = 0
-    g_iRetakesFlagsCache = 0
+    g_iRetakesFlagsCache  = 0
 }
 
 
