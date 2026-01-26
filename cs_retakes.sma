@@ -4,7 +4,7 @@
 #include < cstrike >
 #include < xs >
 
-#tryinclude < cstrike_pdatas >
+//#tryinclude < cstrike_pdatas >
 
 #if !defined _cbaseentity_included
     stock const SHORT_BYTES = 2
@@ -23,12 +23,13 @@
 
     stock const m_rgpPlayerItems_CBasePlayer[ 6 ] = { 367, 368, 369, 370, 371, 372 }
     
+    #if AMXX_VERSION_NUM <= 182
     stock bool:get_pdata_bool( ent, charbased_offset, intbase_linuxdiff = 5 )
     {
         return !!( get_pdata_int( ent, charbased_offset / INT_BYTES, intbase_linuxdiff )
             & ( 0xFF << ( ( charbased_offset % INT_BYTES ) * BYTE_BITS ) ) )
     }
-    
+
     stock set_pdata_char( ent, charbased_offset, value, intbase_linuxdiff = 5 )
     {
         value &= 0xFF
@@ -43,11 +44,12 @@
         
         return 1
     }
-    
+
     stock set_pdata_bool( ent, charbased_offset, bool:value, intbase_linuxdiff = 5 )
     {
         set_pdata_char( ent, charbased_offset, _:value, intbase_linuxdiff )
     }
+    #endif
 #endif
 
 #if !defined m_bStartedArming
@@ -57,6 +59,7 @@
 #if !defined m_flArmedTime2
     stock const m_flArmedTime2 	= 81
 #endif
+
 
 //#define DEBUG_NAV // Enable this to print NAV loading
 
@@ -76,7 +79,8 @@ enum _:RetakesFlags
     RETAKES_INSTADEFUSE 	= ( 1<<3 ), // d
     RETAKES_INSTADEFUSE_ELIM 	= ( 1<<4 ), // e
     RETAKES_SHOWTIMER 		= ( 1<<5 ), // f
-    RETAKES_TEAMROTATION 	= ( 1<<6 )  // g
+    RETAKES_TEAMROTATION 	= ( 1<<6 ), // g
+    RETAKES_CTROUNDBONUS		= ( 1<<7 )  // h
 }
 
 const Float:flHalfHumanHeight 	= 36.0
@@ -99,6 +103,7 @@ new Array:g_aAreaVisible
 new Array:g_aAreaUsed
 
 new bool:g_bRetakesEnabled
+new bool:g_bTargetBombed
 new g_iRetakesFlagsCache
 new g_iRetakesStateBuffer
 new g_iRandomSite
@@ -125,6 +130,7 @@ new g_pCvar_BuyTime
 new g_pCvar_ForceSite
 new g_pCvar_SiteStreak
 new g_pCvar_RotateRound
+new g_pCvar_CTRoundBonus
 new g_pCvar_StateBuffer
 new g_pCvar_MaxPlayers
 new g_pCvar_RetakesFlags
@@ -177,6 +183,7 @@ public plugin_init()
     register_logevent( "round_OnRoundStart", 2, "1=Round_Start" )
     register_logevent( "round_OnRoundEnd", 2, "1=Round_End" )
     register_logevent( "round_OnBombPlanted", 3, "2=Planted_The_Bomb" )
+    register_logevent( "round_OnTargetBombed", 6, "3=Target_Bombed" )
     register_logevent( "c4_OnSpawnedWithTheBomb", 3, "2=Spawned_With_The_Bomb" )
     
     register_message( get_user_msgid( "SendAudio" ), "msg_OnSendAudio" )
@@ -193,9 +200,10 @@ public plugin_init()
     g_pCvar_ForceSite	= register_cvar( "amx_retakes_forcesite", "0" )
     g_pCvar_SiteStreak	= register_cvar( "amx_retakes_sitestreak", "2" )
     g_pCvar_RotateRound	= register_cvar( "amx_retakes_rotateround", "5" )
+    g_pCvar_CTRoundBonus= register_cvar( "amx_retakes_ctroundbonus", "800" )
     g_pCvar_StateBuffer	= register_cvar( "amx_retakes_statebuffer", "4" )
     g_pCvar_MaxPlayers	= register_cvar( "amx_retakes_maxplayers", "12" )
-    g_pCvar_RetakesFlags= register_cvar( "amx_retakes_flags", "abcdefg" )
+    g_pCvar_RetakesFlags= register_cvar( "amx_retakes_flags", "abcdefgh" )
     
     g_pCvar_C4Timer 	= get_cvar_pointer( "mp_c4timer" )
     
@@ -204,10 +212,10 @@ public plugin_init()
     g_iMaxPlayers 	= get_maxplayers()
     
     // Message IDs
-    g_iMsgId_ShowTimer = get_user_msgid( "ShowTimer" )
-    g_iMsgId_RoundTime = get_user_msgid( "RoundTime" )
-    g_iMsgId_BombDrop  = get_user_msgid( "BombDrop" )
-    g_iMsgId_BarTime2  = get_user_msgid( "BarTime2" )
+    g_iMsgId_ShowTimer  = get_user_msgid( "ShowTimer" )
+    g_iMsgId_RoundTime  = get_user_msgid( "RoundTime" )
+    g_iMsgId_BombDrop   = get_user_msgid( "BombDrop" )
+    g_iMsgId_BarTime2   = get_user_msgid( "BarTime2" )
     
     // Buyzone entity
     retakes_CreateGlobalBuyzone()
@@ -242,7 +250,7 @@ public retakes_IsEnabled()
 
 public retakes_SetEnabled( bool:bEnabled )
 {
-    g_bRetakesEnabled = bEnabled
+    g_bRetakesEnabled    = bEnabled
     g_iRetakesFlagsCache = 0   // force refresh next access
 }
 
@@ -659,8 +667,9 @@ c4_RepositionPlanted( iC4, const Float:flAbsMin[ 3 ], const Float:flAbsMax[ 3 ],
 
 // ============================================================================
 // ROUND SUBSYSTEM
-// Handles: round start, round end, site selection, team rotation,
-// buytime logic, timer HUD scheduling, and state machine transitions.
+// Handles: round start, round end, site selection, team rotation, 
+// bonus money, buytime logic, timer HUD scheduling, 
+// and state machine transitions.
 // ============================================================================
 
 
@@ -684,6 +693,8 @@ public round_OnHLTVNewRound()
     g_flNewRoundTime = get_gametime()
 
     round_SelectSite()
+    
+    round_CTRoundBonus()
 
     // Reset spawn subsystem state
     spawn_ResetUsed()
@@ -745,6 +756,35 @@ round_SelectSite()
 
 
 // ---------------------------------------------------------------------------
+// Round: Rewards bonus money to CTs
+// ---------------------------------------------------------------------------
+
+public round_CTRoundBonus()
+{
+    if ( !retakes_HasFlag( RETAKES_CTROUNDBONUS ) )
+        return
+
+    if ( !g_bTargetBombed )
+	return
+	
+    g_bTargetBombed = false
+	
+    new iRoundBonus = get_pcvar_num( g_pCvar_CTRoundBonus )
+	
+    new iPlayers[ 32 ], iNum
+    get_players( iPlayers, iNum, "e", "CT" )
+    
+    for ( new i = 0; i < iNum; i++ )
+    {
+         new id = iPlayers[ i ]
+	 
+         cs_set_user_money( id, cs_get_user_money( id ) + iRoundBonus )
+	 client_print(id, print_chat, "bonus money %d", cs_get_user_money(id) + iRoundBonus)
+    }
+}
+
+
+// ---------------------------------------------------------------------------
 // Round: Restart (TextMsg "Game_C" / "Game_W")
 // ---------------------------------------------------------------------------
 
@@ -756,6 +796,7 @@ public round_OnRestart()
     g_iRoundCount         = 0
     g_iRetakesStateBuffer = 0
     g_iRetakesFlagsCache  = 0
+    g_bTargetBombed = false
 }
 
 
@@ -936,6 +977,22 @@ public round_OnBombPlanted()
 	
     if ( g_flNewRoundTime > 0.0 )
         set_task( 1.0, "round_UpdateTimerHUD", TASKID_ROUNDTIME )
+}
+
+
+// ---------------------------------------------------------------------------
+// Round: Target Bombed (CT bonus reward)
+// ---------------------------------------------------------------------------
+
+public round_OnTargetBombed()
+{
+    if ( !retakes_IsEnabled() )
+        return
+
+    if ( !retakes_HasFlag( RETAKES_CTROUNDBONUS ) )
+        return
+	
+    g_bTargetBombed = true
 }
 
 
@@ -1406,12 +1463,11 @@ bombsite_Establish()
         "func_bomb_target"
     }
 
-    new iEnt = -1
     new iSite = -1
 
     for ( new iClass = 0; iClass < sizeof szClasses; iClass++ )
     {
-        iEnt = -1
+        new iEnt = -1
 
         while ( ( iEnt = engfunc( EngFunc_FindEntityByString, iEnt, "classname", szClasses[ iClass ] ) ) )
         {
@@ -1442,7 +1498,7 @@ bombsite_Establish()
                 g_iBombsiteEnt[ iSite ] = iEnt
 
                 bombsite_AssignAreas( iSite, flAbsMin, flAbsMax )
-	   }
+	    }
 	    
             #if defined DEBUG_NAV
             server_print
@@ -1663,7 +1719,7 @@ bombsite_FindAreaByBounds( const Float:flMin[ 3 ], const Float:flMax[ 3 ] )
 
 // ============================================================================
 // UTILITY SUBSYSTEM
-// Stateless helpers: shuffle, trace wrappers.
+// Stateless helpers: shuffle, geometry, and trace wrappers.
 // ============================================================================
 
 
@@ -1727,7 +1783,7 @@ bool:util_TraceHullClear
 // Geometry: compute NAV area center from extents
 // ---------------------------------------------------------------------------
 
-stock util_AreaCenter( iArea, Float:flOut[ 3 ], Float:flZoffset = flHumanHeight )
+util_AreaCenter( iArea, Float:flOut[ 3 ], Float:flZoffset = flHumanHeight )
 {
     new Float:flExt[ 6 ]
     ArrayGetArray( g_aAreaExtents, iArea, flExt )
@@ -1741,10 +1797,10 @@ stock util_AreaCenter( iArea, Float:flOut[ 3 ], Float:flZoffset = flHumanHeight 
 
 // ---------------------------------------------------------------------------
 // Trace: multi-sample LOS test between two NAV areas
-// Returns true if any samples have clear line-of-sight.
+// Returns true if any sample have clear line-of-sight.
 // ---------------------------------------------------------------------------
 
-stock bool:util_AreaLOS_Multi( iAreaA, iAreaB )
+bool:util_AreaLOS_Multi( iAreaA, iAreaB )
 {
     // Compute centers
     new Float:flCenterA[ 3 ], Float:flCenterB[ 3 ]
@@ -1784,7 +1840,7 @@ stock bool:util_AreaLOS_Multi( iAreaA, iAreaB )
 // Returns true if the trace reaches the end point with no obstruction.
 // ---------------------------------------------------------------------------
 
-stock bool:util_HasLineOfSight( const Float:flFrom[ 3 ], const Float:flTo[ 3 ] )
+bool:util_HasLineOfSight( const Float:flFrom[ 3 ], const Float:flTo[ 3 ] )
 {
     new iTrace = create_tr2()
 
@@ -1888,7 +1944,7 @@ nav_Load( const szMapName[] )
 nav_ParseHeader( iFile )
 {
     const NAV_MAGIC_NUMBER = 0xFEEDFACE
-    const NAV_VERSION = 5 //CS:CZ
+    const NAV_VERSION = 5 // CS:CZ
 
     new iMagic, iVersion
 
