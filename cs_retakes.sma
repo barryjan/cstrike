@@ -121,7 +121,6 @@ new g_pCvar_BuyTime
 new g_pCvar_ForceSite
 new g_pCvar_SiteStreak
 new g_pCvar_RotateRound
-new g_pCvar_CTRoundBonus
 new g_pCvar_StateBuffer
 new g_pCvar_MaxPlayers
 new g_pCvar_RetakesFlags
