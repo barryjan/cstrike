@@ -5,8 +5,8 @@
 #include < xs >
 
 #define MAX_PLAYERS 		32
+#define MAX_FILELEN 		64
 #define MAX_ENTSARRAY_SIZE 	64
-#define MAX_FILELEN 		256
 #define XO_CBASEPLAYERITEM	4
 #define m_pPlayer 		41
 #define IsValidPrivateData(%1) 	( pev_valid( %1 ) == 2 )
@@ -17,13 +17,13 @@
 #define GetStunTime(%1) 	pev( %1, pev_fuser3 )
 
 new const g_szWeaponName[][] 	= { "Flashbang", "Concussion Grenade" }
-new const Float:CONC_RADIUS 	= 500.0 // blast radius
-new const CONC_AMOUNT[]		= { 5, 10 } // min, max
-new const Float:SLOWDOWN_SHOCK 	= 1316.0 // slow down modifier
-new const Float:DUR_MODIFIER 	= 0.6 // stun duration modifier
-new const Float:MAX_DELAY	= 10.0 // max detonation delay
+new const Float:CONC_RADIUS 	= 500.0 	// blast radius
+new const CONC_AMOUNT[]		= { 5, 10 } 	// min, max
+new const Float:SLOWDOWN_SHOCK 	= 1316.0 	// slow down modifier
+new const Float:DUR_MODIFIER 	= 0.6 		// stun duration modifier
+new const Float:MAX_DELAY	= 10.0 		// max detonation delay
 new const COLOR[] 		= { 200, 200, 200 } // flash color (rgb)
-new const MAX_ALPHA 		= 160 // flash alpha
+new const MAX_ALPHA 		= 160 		// flash alpha
 
 enum _:GrenadeData
 {
@@ -37,7 +37,7 @@ enum _:Resources
 	vModel[ MAX_FILELEN ],
 	pModel[ MAX_FILELEN ],
 	wModel[ MAX_FILELEN ],
-	Sound[ MAX_FILELEN ]
+	 Sound[ MAX_FILELEN ]
 }
 
 new g_eConcGrenadeFiles[ Resources ] =
@@ -60,7 +60,7 @@ public plugin_init()
 	register_plugin
 	(
 		.plugin_name 	= "Concussion Grenade",
-		.version	= "1.0",
+		.version	= "1.1",
 		.author 	= "BARRY."
 	)
 	
@@ -176,7 +176,12 @@ public forward_SecondaryAttack( iEnt )
 
 	client_print( id, print_center, "Switched to %s", g_szWeaponName[ g_bPlayerConcMode[ id ] ] )
 		
+	#if AMXX_VERSION_NUM > 182
+	ExecuteHamB( Ham_CS_Weapon_SendWeaponAnim, iEnt, iDeloyAnim, 0, pev( id, pev_body ) )
+	#else
 	ExecuteHamB( Ham_Weapon_SendWeaponAnim, iEnt, iDeloyAnim, 0, pev( id, pev_body ) )
+	#endif
+
 	ExecuteHamB( Ham_Item_Deploy, iEnt )
 	
 	return HAM_IGNORED

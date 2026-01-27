@@ -4,62 +4,55 @@
 #include < cstrike >
 #include < xs >
 
-//#tryinclude < cstrike_pdatas >
+// cstrike_pdatas
+stock const XO_CBASEPLAYERITEM 	= 4
+stock const XO_CGRENADE		= 5
+stock const XO_CBASEPLAYERWEAPON= 4
+stock const XO_CBASEPLAYER 	= 5
 
-#if !defined _cbaseentity_included
-    stock const SHORT_BYTES = 2
-    stock const INT_BYTES = 4
-    stock const BYTE_BITS = 8
-    
-    stock const XO_CBASEPLAYERITEM = 4
-    stock const XO_CGRENADE = 5
-    stock const XO_CBASEPLAYERWEAPON = 4
-    stock const XO_CBASEPLAYER = 5
-    
-    stock const m_pPlayer = 41
-    stock const m_flDefuseCountDown = 99
-    stock const m_fClientMapZone = 235
-    stock const m_bIsC4 = 385
+stock const m_pPlayer 		= 41
+stock const m_flDefuseCountDown	= 99
+stock const m_fClientMapZone 	= 235
+stock const m_bIsC4 		= 385
+stock const m_bStartedArming 	= 320
+stock const m_flArmedTime2 	= 81
+stock const m_rgpPlayerItems_CBasePlayer[ 6 ] = { 367, 368, 369, 370, 371, 372 }
 
-    stock const m_rgpPlayerItems_CBasePlayer[ 6 ] = { 367, 368, 369, 370, 371, 372 }
-    
-    #if AMXX_VERSION_NUM <= 182
-    stock bool:get_pdata_bool( ent, charbased_offset, intbase_linuxdiff = 5 )
-    {
-        return !!( get_pdata_int( ent, charbased_offset / INT_BYTES, intbase_linuxdiff )
-            & ( 0xFF << ( ( charbased_offset % INT_BYTES ) * BYTE_BITS ) ) )
-    }
+stock const SHORT_BYTES		= 2
+stock const INT_BYTES		= 4
+stock const BYTE_BITS		= 8
 
-    stock set_pdata_char( ent, charbased_offset, value, intbase_linuxdiff = 5 )
-    {
-        value &= 0xFF
-        
-        new int_offset_value = get_pdata_int( ent, charbased_offset / INT_BYTES, intbase_linuxdiff )
-        new bit_decal = ( charbased_offset % INT_BYTES ) * BYTE_BITS
-        
-        int_offset_value &= ~( 0xFF << bit_decal ) // clear byte
-        int_offset_value |= value << bit_decal
-        
-        set_pdata_int( ent, charbased_offset / INT_BYTES, int_offset_value, intbase_linuxdiff )
-        
-        return 1
-    }
-
-    stock set_pdata_bool( ent, charbased_offset, bool:value, intbase_linuxdiff = 5 )
-    {
-        set_pdata_char( ent, charbased_offset, _:value, intbase_linuxdiff )
-    }
-    #endif
+#if !defined get_pdata_bool
+stock bool:get_pdata_bool( ent, charbased_offset, intbase_linuxdiff = 20 )
+{
+    return !!( get_pdata_int( ent, charbased_offset / INT_BYTES, intbase_linuxdiff )
+        & ( 0xFF << ( ( charbased_offset % INT_BYTES ) * BYTE_BITS ) ) )
+}
 #endif
 
-#if !defined m_bStartedArming
-    stock const m_bStartedArming = 320
-#endif
+#if !defined set_pdata_char
+stock set_pdata_char( ent, charbased_offset, value, intbase_linuxdiff = 20 )
+{
+    value &= 0xFF
 
-#if !defined m_flArmedTime2
-    stock const m_flArmedTime2 	= 81
-#endif
+    new int_offset_value = get_pdata_int( ent, charbased_offset / INT_BYTES, intbase_linuxdiff )
+    new bit_decal = ( charbased_offset % INT_BYTES ) * BYTE_BITS
+    
+    int_offset_value &= ~( 0xFF << bit_decal ) // clear byte
+    int_offset_value |= value << bit_decal
 
+    set_pdata_int( ent, charbased_offset / INT_BYTES, int_offset_value, intbase_linuxdiff )
+    
+    return 1
+}
+#endif
+    
+#if !defined set_pdata_bool
+stock set_pdata_bool( ent, charbased_offset, bool:value, intbase_linuxdiff = 20 )
+{
+    set_pdata_char( ent, charbased_offset, _:value, intbase_linuxdiff )
+}
+#endif
 
 //#define DEBUG_NAV // Enable this to print NAV loading
 
@@ -76,11 +69,10 @@ enum _:RetakesFlags
     RETAKES_AUTOPLANT 		= ( 1<<0 ), // a
     RETAKES_INSTAPLANT 		= ( 1<<1 ), // b
     RETAKES_DEFUSEKIT		= ( 1<<2 ), // c
-    RETAKES_INSTADEFUSE 	= ( 1<<3 ), // d
+    RETAKES_INSTADEFUSE		= ( 1<<3 ), // d
     RETAKES_INSTADEFUSE_ELIM 	= ( 1<<4 ), // e
     RETAKES_SHOWTIMER 		= ( 1<<5 ), // f
     RETAKES_TEAMROTATION 	= ( 1<<6 ), // g
-    RETAKES_CTROUNDBONUS		= ( 1<<7 )  // h
 }
 
 const Float:flHalfHumanHeight 	= 36.0
@@ -103,7 +95,6 @@ new Array:g_aAreaVisible
 new Array:g_aAreaUsed
 
 new bool:g_bRetakesEnabled
-new bool:g_bTargetBombed
 new g_iRetakesFlagsCache
 new g_iRetakesStateBuffer
 new g_iRandomSite
@@ -140,7 +131,7 @@ public plugin_init()
     register_plugin
     (
         .plugin_name	= "CS Retakes",
-        .version      	= "1.0",
+        .version      	= "1.1",
         .author     	= "BARRY."
     )
     
@@ -183,7 +174,6 @@ public plugin_init()
     register_logevent( "round_OnRoundStart", 2, "1=Round_Start" )
     register_logevent( "round_OnRoundEnd", 2, "1=Round_End" )
     register_logevent( "round_OnBombPlanted", 3, "2=Planted_The_Bomb" )
-    register_logevent( "round_OnTargetBombed", 6, "3=Target_Bombed" )
     register_logevent( "c4_OnSpawnedWithTheBomb", 3, "2=Spawned_With_The_Bomb" )
     
     register_message( get_user_msgid( "SendAudio" ), "msg_OnSendAudio" )
@@ -200,7 +190,6 @@ public plugin_init()
     g_pCvar_ForceSite	= register_cvar( "amx_retakes_forcesite", "0" )
     g_pCvar_SiteStreak	= register_cvar( "amx_retakes_sitestreak", "2" )
     g_pCvar_RotateRound	= register_cvar( "amx_retakes_rotateround", "5" )
-    g_pCvar_CTRoundBonus= register_cvar( "amx_retakes_ctroundbonus", "800" )
     g_pCvar_StateBuffer	= register_cvar( "amx_retakes_statebuffer", "4" )
     g_pCvar_MaxPlayers	= register_cvar( "amx_retakes_maxplayers", "12" )
     g_pCvar_RetakesFlags= register_cvar( "amx_retakes_flags", "abcdefgh" )
@@ -517,13 +506,6 @@ c4_FindOwner()
 
 c4_FindPlanted()
 {
-    /*new iEnt = -1
-
-    while ( ( iEnt = engfunc( EngFunc_FindEntityByString, iEnt, "classname", "grenade" ) ) )
-    {
-        if ( get_pdata_bool( iEnt, m_bIsC4, XO_CGRENADE ) )
-            return iEnt
-    }*/
     new iEnt = engfunc( EngFunc_FindEntityByString, -1, "model" , "models/w_c4.mdl" )
 
     return iEnt
@@ -668,8 +650,7 @@ c4_RepositionPlanted( iC4, const Float:flAbsMin[ 3 ], const Float:flAbsMax[ 3 ],
 // ============================================================================
 // ROUND SUBSYSTEM
 // Handles: round start, round end, site selection, team rotation, 
-// bonus money, buytime logic, timer HUD scheduling, 
-// and state machine transitions.
+// buytime logic, timer HUD scheduling, and state machine transitions.
 // ============================================================================
 
 
@@ -693,8 +674,6 @@ public round_OnHLTVNewRound()
     g_flNewRoundTime = get_gametime()
 
     round_SelectSite()
-    
-    round_CTRoundBonus()
 
     // Reset spawn subsystem state
     spawn_ResetUsed()
@@ -756,35 +735,6 @@ round_SelectSite()
 
 
 // ---------------------------------------------------------------------------
-// Round: Rewards bonus money to CTs
-// ---------------------------------------------------------------------------
-
-public round_CTRoundBonus()
-{
-    if ( !retakes_HasFlag( RETAKES_CTROUNDBONUS ) )
-        return
-
-    if ( !g_bTargetBombed )
-	return
-	
-    g_bTargetBombed = false
-	
-    new iRoundBonus = get_pcvar_num( g_pCvar_CTRoundBonus )
-	
-    new iPlayers[ 32 ], iNum
-    get_players( iPlayers, iNum, "e", "CT" )
-    
-    for ( new i = 0; i < iNum; i++ )
-    {
-         new id = iPlayers[ i ]
-	 
-         cs_set_user_money( id, cs_get_user_money( id ) + iRoundBonus )
-	 client_print(id, print_chat, "bonus money %d", cs_get_user_money(id) + iRoundBonus)
-    }
-}
-
-
-// ---------------------------------------------------------------------------
 // Round: Restart (TextMsg "Game_C" / "Game_W")
 // ---------------------------------------------------------------------------
 
@@ -796,7 +746,6 @@ public round_OnRestart()
     g_iRoundCount         = 0
     g_iRetakesStateBuffer = 0
     g_iRetakesFlagsCache  = 0
-    g_bTargetBombed = false
 }
 
 
@@ -981,22 +930,6 @@ public round_OnBombPlanted()
 
 
 // ---------------------------------------------------------------------------
-// Round: Target Bombed (CT bonus reward)
-// ---------------------------------------------------------------------------
-
-public round_OnTargetBombed()
-{
-    if ( !retakes_IsEnabled() )
-        return
-
-    if ( !retakes_HasFlag( RETAKES_CTROUNDBONUS ) )
-        return
-	
-    g_bTargetBombed = true
-}
-
-
-// ---------------------------------------------------------------------------
 // Round: Timer HUD update (delegates to messaging subsystem)
 // ---------------------------------------------------------------------------
 
@@ -1008,7 +941,7 @@ public round_UpdateTimerHUD()
 
 // ============================================================================
 // MESSAGING SUBSYSTEM
-// Handles: TextMsg suppression, SendAudio suppression,and C4 visibility 
+// Handles: TextMsg suppression, SendAudio suppression, and C4 visibility
 // ============================================================================
 
 
