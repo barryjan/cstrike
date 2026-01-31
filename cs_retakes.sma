@@ -5,22 +5,22 @@
 #include < xs >
 
 // cstrike_pdatas
-stock const XO_CBASEPLAYERITEM 	= 4
-stock const XO_CGRENADE		= 5
+stock const XO_CBASEPLAYERITEM  = 4
+stock const XO_CGRENADE         = 5
 stock const XO_CBASEPLAYERWEAPON= 4
-stock const XO_CBASEPLAYER 	= 5
+stock const XO_CBASEPLAYER      = 5
 
-stock const m_pPlayer 		= 41
-stock const m_flDefuseCountDown	= 99
-stock const m_fClientMapZone 	= 235
-stock const m_bIsC4 		= 385
-stock const m_bStartedArming 	= 320
-stock const m_flArmedTime2 	= 81
+stock const m_pPlayer           = 41
+stock const m_flDefuseCountDown = 99
+stock const m_fClientMapZone    = 235
+stock const m_bIsC4             = 385
+stock const m_bStartedArming    = 320
+stock const m_flArmedTime2      = 81
 stock const m_rgpPlayerItems_CBasePlayer[ 6 ] = { 367, 368, 369, 370, 371, 372 }
 
-stock const SHORT_BYTES		= 2
-stock const INT_BYTES		= 4
-stock const BYTE_BITS		= 8
+stock const SHORT_BYTES         = 2
+stock const INT_BYTES           = 4
+stock const BYTE_BITS           = 8
 
 #if !defined get_pdata_bool
 stock bool:get_pdata_bool( ent, charbased_offset, intbase_linuxdiff = 20 )
@@ -56,41 +56,41 @@ stock set_pdata_bool( ent, charbased_offset, bool:value, intbase_linuxdiff = 20 
 
 //#define DEBUG_NAV // Enable this to print NAV loading
 
-#define MAX_BOMBSITE_LAYERS 	12
+#define MAX_BOMBSITE_LAYERS     12
 
-#define TASKID_ROUNDSTART 	53412
-#define TASKID_ROUNDTIME 	12439
-#define TASKID_BUYTIME 		62144
+#define TASKID_ROUNDSTART       53412
+#define TASKID_ROUNDTIME        12439
+#define TASKID_BUYTIME          62144
 
-#define __ArrayDestroy(%1) 	if( %1 ) ArrayDestroy( %1 )
+#define __ArrayDestroy(%1) if( %1 ) ArrayDestroy( %1 )
 
 enum _:RetakesFlags
 {
-    RETAKES_AUTOPLANT 		= ( 1<<0 ), // a
-    RETAKES_INSTAPLANT 		= ( 1<<1 ), // b
-    RETAKES_DEFUSEKIT		= ( 1<<2 ), // c
-    RETAKES_INSTADEFUSE		= ( 1<<3 ), // d
-    RETAKES_INSTADEFUSE_ELIM 	= ( 1<<4 ), // e
-    RETAKES_SHOWTIMER 		= ( 1<<5 ), // f
-    RETAKES_TEAMROTATION 	= ( 1<<6 ), // g
+    RETAKES_AUTOPLANT           = ( 1<<0 ), // a
+    RETAKES_INSTAPLANT          = ( 1<<1 ), // b
+    RETAKES_DEFUSEKIT           = ( 1<<2 ), // c
+    RETAKES_INSTADEFUSE         = ( 1<<3 ), // d
+    RETAKES_INSTADEFUSE_ELIM    = ( 1<<4 ), // e
+    RETAKES_SHOWTIMER           = ( 1<<5 ), // f
+    RETAKES_TEAMROTATION        = ( 1<<6 ), // g
 }
 
-const Float:flHalfHumanHeight 	= 36.0
-const Float:flHumanHeight 	= 72.0
-const Float:flHumanWidth 	= 32.0
+const Float:flHalfHumanHeight   = 36.0
+const Float:flHumanHeight       = 72.0
+const Float:flHumanWidth        = 32.0
 
 new Array:g_aPlaceNames
 new Array:g_aAreaID
 new Array:g_aAreaAttrs
-new Array:g_aAreaExtents 	// Float[ 6 ]
+new Array:g_aAreaExtents        // Float[ 6 ]
 new Array:g_aTempNeighborIDs
-new Array:g_aAdjacency 		// Array of Array
+new Array:g_aAdjacency          // Array of Array
 new Array:g_aAreaPlaceEntry
 new Array:g_aAreaSpawnable
 new Array:g_aSpawnCandidates
-new Array:g_aBombsiteAreas[ 2 ]	// 0 = A, 1 = B
+new Array:g_aBombsiteAreas[ 2 ] // 0 = A, 1 = B
 new Array:g_aBombsiteLayers[ 2 ]// Array of Array for each site
-new Array:g_aLOSToBombsite[ 2 ]	// 0 = A, 1 = B
+new Array:g_aLOSToBombsite[ 2 ] // 0 = A, 1 = B
 new Array:g_aAreaVisible
 new Array:g_aAreaUsed
 
@@ -129,12 +129,12 @@ public plugin_init()
 {
     register_plugin
     (
-        .plugin_name	= "CS Retakes",
-        .version      	= "1.1",
-        .author     	= "BARRY."
+        .plugin_name    = "CS Retakes",
+        .version        = "1.1",
+        .author         = "BARRY."
     )
     
-    new szMapname[ 64 ]
+    new szMapname[ 4 ]
     get_mapname( szMapname, charsmax( szMapname ) )
     
     // Only run on de_ maps
@@ -184,20 +184,20 @@ public plugin_init()
     RegisterHam( Ham_Use, "grenade", "c4_OnUse" )
     
     // CVARs
-    g_pCvar_Enable	= register_cvar( "amx_retakes_enable", "1" )
-    g_pCvar_BuyTime	= register_cvar( "amx_retakes_buytime", "5.0" )
-    g_pCvar_ForceSite	= register_cvar( "amx_retakes_forcesite", "0" )
-    g_pCvar_SiteStreak	= register_cvar( "amx_retakes_sitestreak", "2" )
-    g_pCvar_RotateRound	= register_cvar( "amx_retakes_rotateround", "5" )
-    g_pCvar_StateBuffer	= register_cvar( "amx_retakes_statebuffer", "4" )
-    g_pCvar_MaxPlayers	= register_cvar( "amx_retakes_maxplayers", "12" )
+    g_pCvar_Enable      = register_cvar( "amx_retakes_enable", "1" )
+    g_pCvar_BuyTime     = register_cvar( "amx_retakes_buytime", "5.0" )
+    g_pCvar_ForceSite   = register_cvar( "amx_retakes_forcesite", "0" )
+    g_pCvar_SiteStreak  = register_cvar( "amx_retakes_sitestreak", "2" )
+    g_pCvar_RotateRound = register_cvar( "amx_retakes_rotateround", "5" )
+    g_pCvar_StateBuffer = register_cvar( "amx_retakes_statebuffer", "4" )
+    g_pCvar_MaxPlayers  = register_cvar( "amx_retakes_maxplayers", "12" )
     g_pCvar_RetakesFlags= register_cvar( "amx_retakes_flags", "abcdefgh" )
     
-    g_pCvar_C4Timer 	= get_cvar_pointer( "mp_c4timer" )
+    g_pCvar_C4Timer     = get_cvar_pointer( "mp_c4timer" )
     
     // Initial state
-    g_bRetakesEnabled 	= get_pcvar_num( g_pCvar_Enable ) ? true : false
-    g_iMaxPlayers 	= get_maxplayers()
+    g_bRetakesEnabled   = get_pcvar_num( g_pCvar_Enable ) ? true : false
+    g_iMaxPlayers       = get_maxplayers()
     
     // Message IDs
     g_iMsgId_ShowTimer  = get_user_msgid( "ShowTimer" )
@@ -214,9 +214,9 @@ public plugin_init()
 
 public plugin_end()
 {
-	nav_DestroyArrays()
-	spawn_DestroyArrays()
-	bombsite_DestroyArrays()
+    nav_DestroyArrays()
+    spawn_DestroyArrays()
+    bombsite_DestroyArrays()
 }
 
 // ============================================================================
@@ -323,7 +323,7 @@ bool:retakes_UpdateState()
                         szText
                     )
                 }
-	   }
+            }
         }
 
         // Fully disabled
@@ -342,8 +342,8 @@ bool:retakes_UpdateState()
         if ( g_iRetakesStateBuffer == 1 )
         {
             client_print
-	    ( 
-	        0, print_chat,
+            ( 
+                0, print_chat,
                 "[RETAKES] Low player count. Enabling next round."
             )
         }
@@ -628,8 +628,8 @@ c4_RepositionPlanted( iC4, const Float:flAbsMin[ 3 ], const Float:flAbsMax[ 3 ],
         flOrigin[ 1 ] = random_float( flAbsMin[ 1 ], flAbsMax[ 1 ] )
         flOrigin[ 2 ] = random_float( flAbsMin[ 2 ], flAbsMax[ 2 ] )
 
-	if ( util_TraceHullClear( flOrigin ) )
-		break
+        if ( util_TraceHullClear( flOrigin ) )
+            break
     }
 
     engfunc( EngFunc_SetOrigin, iC4, flOrigin )
@@ -845,7 +845,7 @@ public round_OnRoundEnd()
         return
 
     if ( !retakes_HasFlag( RETAKES_TEAMROTATION ) )
-        return  
+        return
 
     g_flNewRoundTime = 0.0
     g_iRoundCount++
@@ -861,7 +861,7 @@ public round_OnRoundEnd()
         for ( new i = 0; i < iNum; i++ )
         {
             new id = iPlayers[ i ]
-	    
+
             new iGroup = ( id - 1 ) / 8
             iGroup = min( iGroup, ( sizeof flDelays - 1 ) )
 
@@ -922,7 +922,7 @@ public round_OnBombPlanted()
 
     if ( !retakes_HasFlag( RETAKES_SHOWTIMER ) )
         return
-	
+
     if ( g_flNewRoundTime > 0.0 )
         set_task( 1.0, "round_UpdateTimerHUD", TASKID_ROUNDTIME )
 }
@@ -997,7 +997,7 @@ public msg_OnCurWeapon( id )
 
     if ( !retakes_HasFlag( RETAKES_AUTOPLANT ) )
         return
-	
+
     // Force C4 to appear in weapon list
     new iWeapons = pev( id, pev_weapons )
     set_pev( id, pev_weapons, iWeapons | ( 1 << CSW_C4 ) )
@@ -1052,10 +1052,10 @@ msg_BroadcastTimerHUD()
 
 spawn_InitArrays()
 {
-    g_aAreaSpawnable 	= ArrayCreate()
-    g_aSpawnCandidates 	= ArrayCreate()
-    g_aAreaVisible 	= ArrayCreate()
-    g_aAreaUsed 	= ArrayCreate()
+    g_aAreaSpawnable    = ArrayCreate()
+    g_aSpawnCandidates  = ArrayCreate()
+    g_aAreaVisible      = ArrayCreate()
+    g_aAreaUsed         = ArrayCreate()
 }
 
 
@@ -1085,9 +1085,9 @@ spawn_FilterSpawnableAreas()
 
         enum
         {
-            NAV_CROUCH 	= ( 1<<0 ), // Must crouch to use this area
-            NAV_JUMP   	= ( 1<<1 ), // Must jump to traverse this area
-            NAV_PRECISE	= ( 1<<2 )  // Tight movement, no obstacle adjustment
+            NAV_CROUCH  = ( 1<<0 ), // Must crouch to use this area
+            NAV_JUMP    = ( 1<<1 ), // Must jump to traverse this area
+            NAV_PRECISE = ( 1<<2 )  // Tight movement, no obstacle adjustment
         }
 
         const NAV_SPAWN_BLOCK_MASK = ( NAV_CROUCH | NAV_JUMP | NAV_PRECISE )
@@ -1116,7 +1116,7 @@ spawn_FilterSpawnableAreas()
                 flCenter[ 1 ] = ( flExt[ 1 ] + flExt[ 4 ] ) * 0.5
                 flCenter[ 2 ] = ( flExt[ 2 ] + flExt[ 5 ] ) * 0.5
                 flCenter[ 2 ] += flHalfHumanHeight
-		
+
                 if ( !util_TraceHullClear( flCenter ) )
                     bSpawnable = false
             }
@@ -1372,7 +1372,7 @@ bombsite_DestroyArrays()
                 new Array:aLayer = ArrayGetCell( g_aBombsiteLayers[ iSite ], i )
                 __ArrayDestroy( aLayer )
             }
-	    
+
             __ArrayDestroy( g_aBombsiteLayers[ iSite ] )
         }
 
@@ -1430,8 +1430,8 @@ bombsite_Establish()
                 g_iBombsiteEnt[ iSite ] = iEnt
 
                 bombsite_AssignAreas( iSite, flAbsMin, flAbsMax )
-	    }
-	    
+        }
+
             #if defined DEBUG_NAV
             server_print
             (
@@ -1487,7 +1487,7 @@ bombsite_AssignAreas( iSite, const Float:flAbsMin[ 3 ], const Float:flAbsMax[ 3 
     for ( new iArea = 0; iArea < ArraySize( g_aAreaID ); iArea++ )
     {
         if ( bombsite_ArrayContains( g_aBombsiteAreas[ iSite ], iArea ) )
-		continue
+            continue
 
         if ( ArrayGetCell( g_aAreaPlaceEntry, iArea ) == iPlace )
                 ArrayPushCell( g_aBombsiteAreas[ iSite ], iArea )
@@ -1539,7 +1539,7 @@ bombsite_BuildLayers( iMaxDepth )
             }
 
             ArrayPushCell( g_aBombsiteLayers[ iSite ], aCurr )
-	    
+
             #if defined DEBUG_NAV
             server_print
             (
@@ -1629,23 +1629,23 @@ bool:bombsite_AreaInAnyLayer( Array:aLayers, iArea )
 
 bombsite_FindAreaByBounds( const Float:flMin[ 3 ], const Float:flMax[ 3 ] )
 {
-	new Float:flExt[ 6 ]
-	
-	for ( new i = 0; i < ArraySize( g_aAreaExtents ); i++ )
-	{
-		ArrayGetArray( g_aAreaExtents, i, flExt )
-		if ( 	flMax[ 0 ] >= flExt[ 0 ] &&
-			flMin[ 0 ] <= flExt[ 3 ] &&
-			flMax[ 1 ] >= flExt[ 1 ] &&
-			flMin[ 1 ] <= flExt[ 4 ] &&
-			flMax[ 2 ] >= flExt[ 2 ] &&
-			flMin[ 2 ] <= flExt[ 5 ] ) 
-		{
-			return i
-		}
-	}
-	
-	return -1
+    new Float:flExt[ 6 ]
+
+    for ( new i = 0; i < ArraySize( g_aAreaExtents ); i++ )
+    {
+        ArrayGetArray( g_aAreaExtents, i, flExt )
+        if ( flMax[ 0 ] >= flExt[ 0 ] &&
+             flMin[ 0 ] <= flExt[ 3 ] &&
+             flMax[ 1 ] >= flExt[ 1 ] &&
+             flMin[ 1 ] <= flExt[ 4 ] &&
+             flMax[ 2 ] >= flExt[ 2 ] &&
+             flMin[ 2 ] <= flExt[ 5 ] ) 
+        {
+             return i
+        }
+    }
+
+    return -1
 }
 
 
@@ -1800,13 +1800,13 @@ bool:util_HasLineOfSight( const Float:flFrom[ 3 ], const Float:flTo[ 3 ] )
 
 nav_InitArrays()
 {
-    g_aAreaExtents 	= ArrayCreate( 6 )
-    g_aAdjacency 	= ArrayCreate()
-    g_aAreaPlaceEntry 	= ArrayCreate()
-    g_aPlaceNames 	= ArrayCreate( 32 )
-    g_aTempNeighborIDs 	= ArrayCreate()
-    g_aAreaID 		= ArrayCreate()
-    g_aAreaAttrs 	= ArrayCreate()
+    g_aAreaExtents      = ArrayCreate( 6 )
+    g_aAdjacency        = ArrayCreate()
+    g_aAreaPlaceEntry   = ArrayCreate()
+    g_aPlaceNames       = ArrayCreate( 32 )
+    g_aTempNeighborIDs  = ArrayCreate()
+    g_aAreaID           = ArrayCreate()
+    g_aAreaAttrs        = ArrayCreate()
 }
 
 
@@ -1909,16 +1909,16 @@ nav_ParsePlaces( iFile )
     {
         new iLen
         fread( iFile, iLen, BLOCK_SHORT )
-	
+
         new iRead = min( iLen, charsmax( szPlaceName ) )
-	
+
         if ( iRead > 0 )
         {
             fread_blocks( iFile, szPlaceName, iRead, BLOCK_CHAR )
 
             szPlaceName[ iRead - 1 ] = 0
         }
-	
+
         if ( iLen > iRead )
             fseek( iFile, iLen - iRead, SEEK_CUR )
 
@@ -1942,9 +1942,9 @@ nav_ParseAreas( iFile )
         // ID
         new iAreaID
         fread( iFile, iAreaID, BLOCK_INT )
-	
+
         ArrayPushCell( g_aAreaID, iAreaID )
-	
+
         // Attribute flags
         new iAttrs
         fread( iFile, iAttrs, BLOCK_CHAR )
@@ -1973,7 +1973,7 @@ nav_ParseAreas( iFile )
         // In the order NORTH, EAST, SOUTH, WEST
         for ( new d = 0; d < 4; d++ )
         {
-	   // Number of connections for this direction
+            // Number of connections for this direction
             new iConnCount
             fread( iFile, iConnCount, BLOCK_INT )
 
@@ -1981,20 +1981,20 @@ nav_ParseAreas( iFile )
             {
                 new iNeighborID
                 fread( iFile, iNeighborID, BLOCK_INT )
-		
+
                 ArrayPushCell( aTemp, iNeighborID )
             }
         }
 
         ArrayPushCell( g_aTempNeighborIDs, aTemp )
-	
+
         /*struct connectionData_t {
            unsigned int count;             4
            unsigned int AreaIDs[ count ];  4
         }*/
 
         // Skip rest of area (hides, approaches, encounters)
-	
+
         new iHideCount
         fread( iFile, iHideCount, BLOCK_CHAR )
         iHideCount &= 0xFF
@@ -2039,10 +2039,11 @@ nav_ParseAreas( iFile )
                 unsigned byte EntryDirection;       1
                 unsigned int DestAreaID;            4
                 unsigned byte DestDirection;        1
+
                 unsigned char encounterSpotCount;   1
                 encounterSpot_t encounterSpots[ encounterSpotCount ];
             }
-			
+
             struct encounterSpot_t {
                 unsigned int AreaID;                4
                 unsigned char ParametricDistance;   1
@@ -2072,7 +2073,6 @@ nav_PostLoad()
     {
         new Array:aTemp = ArrayGetCell( g_aTempNeighborIDs, iArea )
         new Array:aNeighbors = ArrayCreate()
-
 
         for ( new i = 0; i < ArraySize( aTemp ); i++ )
         {
