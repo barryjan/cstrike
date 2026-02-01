@@ -134,7 +134,7 @@ public plugin_init()
         .author         = "BARRY."
     )
     
-    new szMapname[ 4 ]
+    new szMapname[ 64 ]
     get_mapname( szMapname, charsmax( szMapname ) )
     
     // Only run on de_ maps
@@ -296,7 +296,7 @@ bool:retakes_UpdateState()
             
             switch ( iRoundsLeft )
             {
-                case 0: 
+                case 0:
                 {
                     g_iRoundCount = 0
 		    
@@ -317,7 +317,7 @@ bool:retakes_UpdateState()
                     )
 		    
                     client_print
-                    ( 
+                    (
                         0, print_chat,
                         "[RETAKES] Too many players. Disabling %s",
                         szText
@@ -342,7 +342,7 @@ bool:retakes_UpdateState()
         if ( g_iRetakesStateBuffer == 1 )
         {
             client_print
-            ( 
+            (
                 0, print_chat,
                 "[RETAKES] Low player count. Enabling next round."
             )
