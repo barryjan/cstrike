@@ -1464,12 +1464,12 @@ bombsite_AssignAreas( iSite, const Float:flAbsMin[ 3 ], const Float:flAbsMax[ 3 
     {
         ArrayGetArray( g_aAreaExtents, iArea, flExt )
 
-        if (    flAbsMax[ 0 ] >= flExt[ 0 ]
-             && flAbsMin[ 0 ] <= flExt[ 3 ]
-             && flAbsMax[ 1 ] >= flExt[ 1 ]
-             && flAbsMin[ 1 ] <= flExt[ 4 ]
-             && flAbsMax[ 2 ] >= flExt[ 2 ]
-             && flAbsMin[ 2 ] <= flExt[ 5 ] )
+        if ( flAbsMax[ 0 ] >= flExt[ 0 ] &&
+             flAbsMin[ 0 ] <= flExt[ 3 ] &&
+             flAbsMax[ 1 ] >= flExt[ 1 ] &&
+             flAbsMin[ 1 ] <= flExt[ 4 ] &&
+             flAbsMax[ 2 ] >= flExt[ 2 ] &&
+             flAbsMin[ 2 ] <= flExt[ 5 ] )
         {
             ArrayPushCell( g_aBombsiteAreas[ iSite ], iArea )
             iPlace = ArrayGetCell( g_aAreaPlaceEntry, iArea )
@@ -1486,7 +1486,7 @@ bombsite_AssignAreas( iSite, const Float:flAbsMin[ 3 ], const Float:flAbsMax[ 3 
             continue
 
         if ( ArrayGetCell( g_aAreaPlaceEntry, iArea ) == iPlace )
-                ArrayPushCell( g_aBombsiteAreas[ iSite ], iArea )
+            ArrayPushCell( g_aBombsiteAreas[ iSite ], iArea )
     }
 }
 
