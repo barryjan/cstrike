@@ -22,15 +22,13 @@ stock const SHORT_BYTES         = 2
 stock const INT_BYTES           = 4
 stock const BYTE_BITS           = 8
 
-#if !defined get_pdata_bool
+#if AMXX_VERSION_NUM < 190
 stock bool:get_pdata_bool( ent, charbased_offset, intbase_linuxdiff = 20 )
 {
     return !!( get_pdata_int( ent, charbased_offset / INT_BYTES, intbase_linuxdiff )
         & ( 0xFF << ( ( charbased_offset % INT_BYTES ) * BYTE_BITS ) ) )
 }
-#endif
 
-#if !defined set_pdata_char
 stock set_pdata_char( ent, charbased_offset, value, intbase_linuxdiff = 20 )
 {
     value &= 0xFF
@@ -45,9 +43,7 @@ stock set_pdata_char( ent, charbased_offset, value, intbase_linuxdiff = 20 )
     
     return 1
 }
-#endif
-    
-#if !defined set_pdata_bool
+
 stock set_pdata_bool( ent, charbased_offset, bool:value, intbase_linuxdiff = 20 )
 {
     set_pdata_char( ent, charbased_offset, _:value, intbase_linuxdiff )
