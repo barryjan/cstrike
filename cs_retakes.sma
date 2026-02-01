@@ -235,7 +235,7 @@ public retakes_IsEnabled()
 public retakes_SetEnabled( bool:bEnabled )
 {
     g_bRetakesEnabled    = bEnabled
-    g_iRetakesFlagsCache = 0   // force refresh next access
+    g_iRetakesFlagsCache = 0 // force refresh next access
 }
 
 
@@ -1426,7 +1426,7 @@ bombsite_Establish()
                 g_iBombsiteEnt[ iSite ] = iEnt
 
                 bombsite_AssignAreas( iSite, flAbsMin, flAbsMax )
-        }
+            }
 
             #if defined DEBUG_NAV
             server_print
