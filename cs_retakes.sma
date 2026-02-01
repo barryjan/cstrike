@@ -72,7 +72,7 @@ enum _:RetakesFlags
     RETAKES_INSTADEFUSE         = ( 1<<3 ), // d
     RETAKES_INSTADEFUSE_ELIM    = ( 1<<4 ), // e
     RETAKES_SHOWTIMER           = ( 1<<5 ), // f
-    RETAKES_TEAMROTATION        = ( 1<<6 ), // g
+    RETAKES_TEAMROTATION        = ( 1<<6 )  // g
 }
 
 const Float:flHalfHumanHeight   = 36.0
